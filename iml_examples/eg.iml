@@ -1,0 +1,17 @@
+(* Simple IML example with functions, axiom, and theorem *)
+
+let add_one (x: int) : int = x + 1
+[@@decomp top ()]
+
+let double (x: int) : int = x * 2
+
+axiom positive_addition x =
+  x >= 0 ==> add_one x > x
+
+theorem double_add_one x =
+  double (add_one x) = add_one (add_one x) + x
+[@@by auto]
+
+verify (fun x -> x > 0 ==> double x > x)
+
+instance (fun x -> x >= 0 ==> not (double x > x))
