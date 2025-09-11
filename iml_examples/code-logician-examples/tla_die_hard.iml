@@ -1,0 +1,60 @@
+type state = {
+  big: int;   (* Water in the 5-gallon jug *)
+  small: int  (* Water in the 3-gallon jug *)
+}
+
+type action =
+  | FILL_SMALL
+  | FILL_BIG
+  | EMPTY_SMALL
+  | EMPTY_BIG
+  | SMALL_TO_BIG
+  | BIG_TO_SMALL
+
+let init_state () : state = {
+  big = 0;
+  small = 0
+}
+
+let solved (s : state) : bool =
+  s.big = 4
+
+let transfer (capacity : int) (source_amount : int) (target_amount : int) : int * int =
+  let new_target = min (source_amount + target_amount) capacity in
+  let new_source = source_amount - (new_target - target_amount) in
+  (new_target, new_source)
+
+let handle_small_to_big (s : state) : state =
+  let (new_big, new_small) = transfer 5 s.small s.big in
+  { big = new_big; small = new_small }
+
+let handle_big_to_small (s : state) : state =
+  let (new_small, new_big) = transfer 3 s.big s.small in
+  { big = new_big; small = new_small }
+
+let apply (action : action) (state : state) : state =
+  match action with
+  | FILL_SMALL -> { state with small = 3 }
+  | FILL_BIG -> { state with big = 5 }
+  | EMPTY_SMALL -> { state with small = 0 }
+  | EMPTY_BIG -> { state with big = 0 }
+  | SMALL_TO_BIG -> handle_small_to_big state
+  | BIG_TO_SMALL -> handle_big_to_small state
+
+let many_steps_measure (actions : action list) : Ordinal.t =
+  Ordinal.of_int (List.length actions)
+
+let rec many_steps (state : state) (actions : action list) : state =
+  match actions with
+  | [] -> state
+  | action :: rest -> many_steps (apply action state) rest
+[@@measure many_steps_measure actions]
+
+instance (fun actions -> let state = many_steps (init_state ()) actions in state.big = 4)
+
+verify (fun actions ->
+  List.length actions < 3
+  ==>
+  let state = many_steps (init_state ()) actions in
+  state.big <> 4)
+[@@by auto]

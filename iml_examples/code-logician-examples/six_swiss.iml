@@ -1,0 +1,121 @@
+type order_type = 
+  | Market 
+  | Limit 
+  | Quote
+
+type order = {
+  order_id: int;
+  order_type: order_type;
+  order_qty: int;
+  order_price: real;
+  order_time: int
+}
+
+type order_book = {
+  buys: order list;
+  sells: order list
+}
+
+let older_price (o1: order) (o2: order) : real =
+  if o1.order_time > o2.order_time then
+    o2.order_price
+  else
+    o1.order_price
+
+let best_buy (ob: order_book) : order option =
+  List.head_opt ob.buys
+
+let best_sell (ob: order_book) : order option =
+  List.head_opt ob.sells
+
+let next_buy (ob: order_book) : order option =
+  match ob.buys with
+  | _ :: x :: _ -> Some x
+  | _ -> None
+
+let next_sell (ob: order_book) : order option =
+  match ob.sells with
+  | _ :: x :: _ -> Some x
+  | _ -> None
+
+let match_limit_or_quote_orders (bb: order) (bs: order) : real option =
+  match bb.order_type, bs.order_type with
+  | (Limit, Limit) | (Quote, Quote) -> Some (older_price bb bs)
+  | _ -> None
+
+let get_next_non_market_price (order: order option) : real option =
+  match order with
+  | Some o when o.order_type <> Market -> Some o.order_price
+  | _ -> None
+
+let determine_market_market_price 
+    (bb: order) 
+    (bs: order) 
+    (ob: order_book) 
+    (ref_price: real) : real option =
+  if bb.order_qty <> bs.order_qty then
+    None
+  else
+    let b_bid = get_next_non_market_price (next_buy ob) in
+    let b_ask = get_next_non_market_price (next_sell ob) in
+    match b_bid, b_ask with
+    | None, None -> Some ref_price
+    | None, Some ask -> Some (if ask <. ref_price then ask else ref_price)
+    | Some bid, None -> Some (if bid >. ref_price then bid else ref_price)
+    | Some bid, Some ask ->
+        if bid >. ref_price then Some bid
+        else if ask <. ref_price then Some ask
+        else Some ref_price
+
+let match_market_limit_orders (bb: order) (bs: order) : real option =
+  match bb.order_type, bs.order_type with
+  | Market, Limit -> Some bs.order_price
+  | Limit, Market -> Some bb.order_price
+  | _ -> None
+
+let handle_quote_limit_match 
+    (quote: order) 
+    (limit: order) 
+    (ob: order_book) 
+    (is_buy_quote: bool) : real option =
+  if quote.order_time > limit.order_time then
+    if quote.order_qty < limit.order_qty then
+      Some limit.order_price
+    else if quote.order_qty = limit.order_qty then
+      let next_order = if is_buy_quote then next_sell ob else next_buy ob in
+      match next_order with
+      | Some o -> Some o.order_price
+      | None -> Some quote.order_price
+    else
+      None
+  else
+    Some (if is_buy_quote then quote.order_price else limit.order_price)
+
+let match_quote_limit_orders (bb: order) (bs: order) (ob: order_book) : real option =
+  match bb.order_type, bs.order_type with
+  | Quote, Limit -> handle_quote_limit_match bb bs ob true
+  | Limit, Quote -> handle_quote_limit_match bs bb ob false
+  | _ -> None
+
+let match_quote_market_orders (bb: order) (bs: order) (ob: order_book) : real option =
+  match bb.order_type, bs.order_type with
+  | Quote, Market -> handle_quote_limit_match bb bs ob true
+  | Market, Quote -> handle_quote_limit_match bs bb ob false
+  | _ -> None
+
+let match_price (ob: order_book) (ref_price: real) : real option =
+  match best_buy ob, best_sell ob with
+  | Some bb, Some bs ->
+      Option.or_ 
+        (match_limit_or_quote_orders bb bs)
+        (Option.or_
+          (if bb.order_type = Market && bs.order_type = Market then
+             determine_market_market_price bb bs ob ref_price
+           else None)
+          (Option.or_
+            (match_market_limit_orders bb bs)
+            (Option.or_
+              (match_quote_limit_orders bb bs ob)
+              (match_quote_market_orders bb bs ob))))
+  | _ -> None
+[@@decomp top ()]

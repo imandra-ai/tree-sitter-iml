@@ -1,0 +1,129 @@
+type location =
+  | BOAT
+  | LEFT_COAST
+  | RIGHT_COAST
+  | EATEN
+
+type boat =
+  | LEFT
+  | RIGHT
+
+type good =
+  | CABBAGE
+  | GOAT
+  | WOLF
+
+type state = {
+  cabbage: location;
+  goat: location;
+  wolf: location;
+  boat: boat
+}
+
+let get_location (state: state) (good: good) : location =
+  match good with
+  | CABBAGE -> state.cabbage
+  | GOAT -> state.goat
+  | WOLF -> state.wolf
+
+let set_location (state: state) (good: good) (location: location) : state =
+  match good with
+  | CABBAGE -> {state with cabbage = location}
+  | GOAT -> {state with goat = location}
+  | WOLF -> {state with wolf = location}
+
+let boat_empty (state: state) : bool =
+  (state.cabbage <> BOAT) &&
+  (state.goat <> BOAT) &&
+  (state.wolf <> BOAT)
+
+let pick (state: state) (good: good) : state =
+  if not (boat_empty state) then
+    state
+  else
+    let good_location = get_location state good in
+    let can_pick = 
+      (good_location = LEFT_COAST && state.boat = LEFT) ||
+      (good_location = RIGHT_COAST && state.boat = RIGHT)
+    in
+    if can_pick then set_location state good BOAT else state
+
+let drop (state: state) (good: good) : state =
+  let good_location = get_location state good in
+  if good_location <> BOAT then
+    state
+  else
+    let new_location = if state.boat = LEFT then LEFT_COAST else RIGHT_COAST in
+    set_location state good new_location
+
+let solved (state: state) : bool =
+  (state.cabbage = RIGHT_COAST) &&
+  (state.goat = RIGHT_COAST) &&
+  (state.wolf = RIGHT_COAST)
+
+let check_eating_condition (state: state) : (good * location) option =
+  match state.boat, state.cabbage, state.goat, state.wolf with
+  | RIGHT, LEFT_COAST, LEFT_COAST, _ -> Some (CABBAGE, EATEN)
+  | RIGHT, _, LEFT_COAST, LEFT_COAST -> Some (GOAT, EATEN)
+  | LEFT, RIGHT_COAST, RIGHT_COAST, _ -> Some (CABBAGE, EATEN)
+  | LEFT, _, RIGHT_COAST, RIGHT_COAST -> Some (GOAT, EATEN)
+  | _ -> None
+
+let process_eating (state: state) : state =
+  match check_eating_condition state with
+  | Some (good, location) -> set_location state good location
+  | None -> state
+
+let anything_eaten (state: state) : bool =
+  state.cabbage = EATEN || state.goat = EATEN
+
+type action =
+  | CROSS_RIVER
+  | PICK_CABBAGE
+  | PICK_GOAT
+  | PICK_WOLF
+  | DROP_CABBAGE
+  | DROP_GOAT
+  | DROP_WOLF
+
+let apply_action (state: state) (action: action) : state =
+  match action with
+  | CROSS_RIVER -> 
+      {state with boat = if state.boat = LEFT then RIGHT else LEFT}
+  | PICK_CABBAGE -> pick state CABBAGE
+  | PICK_GOAT -> pick state GOAT
+  | PICK_WOLF -> pick state WOLF
+  | DROP_CABBAGE -> drop state CABBAGE
+  | DROP_GOAT -> drop state GOAT
+  | DROP_WOLF -> drop state WOLF
+
+let one_step (state: state) (action: action) : state =
+  if anything_eaten state then
+    state
+  else
+    apply_action state action |> process_eating
+
+let many_steps_measure (actions: action list) : Ordinal.t =
+  Ordinal.of_int (List.length actions)
+
+let rec many_steps (state: state) (actions: action list) : state =
+  match actions with
+  | [] -> state
+  | action :: rest ->
+      if anything_eaten state then
+        state
+      else
+        many_steps (one_step state action) rest
+[@@measure many_steps_measure actions]
+
+let init_state = {
+  cabbage = LEFT_COAST;
+  goat = LEFT_COAST;
+  wolf = LEFT_COAST;
+  boat = LEFT
+}
+
+instance (
+  fun actions -> 
+    solved @@ many_steps init_state actions
+)

@@ -1,0 +1,134 @@
+type order_side = Buy | Sell | SellShort
+
+type order_peg = Near | Mid | Far | NoPeg
+
+type order_type = 
+  | Market 
+  | Limit 
+  | Pegged 
+  | PeggedCI 
+  | LimitCI 
+  | FirmUpPegged 
+  | FirmUpLimit
+
+let is_ci (ot : order_type) : bool =
+  match ot with
+  | PeggedCI | LimitCI -> true
+  | _ -> false
+
+let is_limit_type (ot : order_type) : bool =
+  match ot with
+  | Limit | LimitCI | FirmUpLimit -> true
+  | _ -> false
+
+let is_pegged_type (ot : order_type) : bool =
+  match ot with
+  | Pegged | PeggedCI | FirmUpPegged -> true
+  | _ -> false
+
+type market_data = {
+  nbb: real;
+  nbo: real;
+  l_up: real;
+  l_down: real
+}
+
+let mid_point (mkt: market_data) : real =
+  (mkt.nbb +. mkt.nbo) /. 2.0
+
+let valid_market_data (mkt: market_data) : bool =
+  mkt.l_down >. 0.0 &&
+  mkt.nbb >. mkt.l_down &&
+  mkt.nbo >. mkt.nbb &&
+  mkt.l_up >. mkt.nbo
+
+type order = {
+  id: int;
+  peg: order_peg;
+  client_id: int;
+  order_type: order_type;
+  qty: int;
+  min_qty: int;
+  leaves_qty: int;
+  price: real;
+  time: int
+}
+
+let valid_order (o: order) : bool =
+  o.leaves_qty <= o.qty &&
+  o.time >= 0 &&
+  o.price >. 0.0 &&
+  o.qty > 0 &&
+  o.leaves_qty >= 0
+
+let less_aggressive (side: order_side) (lim_price: real) (far_price: real) : real =
+  if lim_price <. 0.0 then
+    far_price
+  else 
+    match side with
+    | Buy -> min_r lim_price far_price
+    | _ -> max_r lim_price far_price
+
+let priority_price (side: order_side) (o: order) (mkt: market_data) : real =
+  match o.order_type with
+  | Limit | LimitCI | FirmUpLimit ->
+    (match side with
+     | Buy -> less_aggressive Buy o.price mkt.nbo
+     | _ -> less_aggressive Sell o.price mkt.nbb)
+  | Market ->
+    (match side with
+     | Buy -> mkt.nbo
+     | _ -> mkt.nbb)
+  | _ -> (* Pegged types *)
+    match o.peg with
+    | Far -> 
+      less_aggressive side o.price 
+        (match side with
+         | Buy -> mkt.nbo
+         | _ -> mkt.nbb)
+    | Mid ->
+      less_aggressive side o.price (mid_point mkt)
+    | Near ->
+      less_aggressive side o.price
+        (match side with
+         | Buy -> mkt.nbb
+         | _ -> mkt.nbo)
+    | NoPeg -> o.price
+
+let order_higher_ranked (side: order_side) (o1: order) (o2: order) (market: market_data) : bool =
+  let p_price1 = priority_price side o1 market in
+  let p_price2 = priority_price side o2 market in
+  
+  let price_comparison = 
+    match side with
+    | Buy -> p_price1 -. p_price2
+    | _ -> p_price2 -. p_price1
+  in
+
+  if price_comparison >. 0.0 then
+    true
+  else if price_comparison <. 0.0 then
+    false
+  else
+    (* Same price level - apply additional rules *)
+    if is_ci o1.order_type && is_ci o2.order_type then
+      o1.leaves_qty > o2.leaves_qty
+    else if o1.time <> o2.time then
+      o1.time < o2.time
+    else if not (is_ci o1.order_type) && is_ci o2.order_type then
+      true
+    else if is_ci o1.order_type && not (is_ci o2.order_type) then
+      false
+    else
+      o1.leaves_qty > o2.leaves_qty
+
+let rank_transitivity (side: order_side) (o1: order) (o2: order) (o3: order) (market: market_data) : bool =
+  if order_higher_ranked side o1 o2 market && order_higher_ranked side o2 o3 market then
+    order_higher_ranked side o1 o3 market
+  else
+    true
+
+
+verify (fun side o1 o2 o3 market -> if order_higher_ranked side o1 o2 market && order_higher_ranked side o2 o3 market then order_higher_ranked side o1 o3 market else true)
+
+verify (fun side o1 o2 o3 market -> (valid_order o1 && valid_order o2 && valid_order o3 && valid_market_data market) ==> rank_transitivity side o1 o2 o3 market)
