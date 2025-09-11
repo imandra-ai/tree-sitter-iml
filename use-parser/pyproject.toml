@@ -9,7 +9,11 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "tree-sitter>=0.25.1",
+    "tree-sitter-ocaml",
 ]
+
+[tool.uv.sources]
+tree-sitter-ocaml = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]
@@ -44,16 +48,30 @@ select = [
     "C4",  # flake8-comprehensions
     "PTH", # flake8-use-pathlib
     "SIM", # flake8-simplify
+    "C90", # mccabe
+    "D",   # pydocstyle
 ]
 ignore = [
     "SIM108", # if-else-block-instead-of-if-exp
     "N801",   # Class name should use CapWords
     "PTH123", # `open()` should be replaced by `Path.open()`
     "C417",   # Unnecessary `map()` usage (rewrite using a generator expression)
+    "D100", # ignore missing docstring in module
+    "D102", # ignore missing docstring in public method
+    "D104", # ignore missing docstring in public package
+    "D105", # ignore missing docstring in magic methods
+    "D107", # ignore missing docstring in __init__ methods
 ]
-task-tags = ["HACK"]
+flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
+mccabe = { max-complexity = 15 }
 pycodestyle.ignore-overlong-task-comments = true
 isort.combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**/*.py" = ["F401", "RUF100", "D"]
+
+[tool.ruff.format]
+quote-style = "single"
 
 [tool.ty]
 environment.python = ".venv"
@@ -61,3 +79,8 @@ environment.python = ".venv"
 [tool.pyright]
 venvPath = ".."
 venv = ".venv"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryIsInstance = false
+reportUnnecessaryTypeIgnoreComment = true
+reportUnusedImport = "warning"

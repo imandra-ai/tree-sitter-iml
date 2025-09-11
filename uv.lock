@@ -262,6 +262,7 @@ version = "0.1.0"
 source = { editable = "use-parser" }
 dependencies = [
     { name = "tree-sitter" },
+    { name = "tree-sitter-ocaml" },
 ]
 
 [package.dev-dependencies]
@@ -271,7 +272,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "tree-sitter", specifier = ">=0.25.1" }]
+requires-dist = [
+    { name = "tree-sitter", specifier = ">=0.25.1" },
+    { name = "tree-sitter-ocaml", editable = "." },
+]
 
 [package.metadata.requires-dev]
 dev = [
