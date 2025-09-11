@@ -143,6 +143,13 @@ module.exports = grammar({
       'val',
       'virtual',
       'when',
+      // IML-specific keywords
+      'axiom',
+      'theorem',
+      'lemma',
+      'verify',
+      'instance',
+      'eval',
       'while',
       'with',
       'lor',
@@ -251,6 +258,13 @@ module.exports = grammar({
       $.class_type_definition,
       $.floating_attribute,
       $._item_extension,
+      // IML-specific constructs
+      $.axiom_definition,
+      $.theorem_definition,
+      $.lemma_definition,
+      $.verify_statement,
+      $.instance_statement,
+      $.eval_statement,
     ),
 
     value_definition: $ => seq(
@@ -496,6 +510,59 @@ module.exports = grammar({
       $._class_type_name,
       '=',
       field('body', $._simple_class_type),
+      repeat($.item_attribute),
+    ),
+
+    // IML-specific constructs
+
+    axiom_definition: $ => seq(
+      'axiom',
+      optional($._attribute),
+      $._value_name,
+      repeat($._parameter),
+      '=',
+      field('body', $._sequence_expression),
+      repeat($.item_attribute),
+    ),
+
+    theorem_definition: $ => seq(
+      'theorem',
+      optional($._attribute),
+      $._value_name,
+      repeat($._parameter),
+      '=',
+      field('statement', $._sequence_expression),
+      repeat($.item_attribute),
+    ),
+
+    lemma_definition: $ => seq(
+      'lemma',
+      optional($._attribute),
+      $._value_name,
+      repeat($._parameter),
+      '=',
+      field('statement', $._sequence_expression),
+      repeat($.item_attribute),
+    ),
+
+    verify_statement: $ => seq(
+      'verify',
+      optional($._attribute),
+      field('specification', $._sequence_expression),
+      repeat($.item_attribute),
+    ),
+
+    instance_statement: $ => seq(
+      'instance',
+      optional($._attribute),
+      field('specification', $._sequence_expression),
+      repeat($.item_attribute),
+    ),
+
+    eval_statement: $ => seq(
+      'eval',
+      optional($._attribute),
+      field('expression', $._sequence_expression),
       repeat($.item_attribute),
     ),
 

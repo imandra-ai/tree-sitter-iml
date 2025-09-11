@@ -276,6 +276,30 @@
         {
           "type": "SYMBOL",
           "name": "_item_extension"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "axiom_definition"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "theorem_definition"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "lemma_definition"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "verify_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "instance_statement"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "eval_statement"
         }
       ]
     },
@@ -2142,6 +2166,267 @@
           "content": {
             "type": "SYMBOL",
             "name": "_simple_class_type"
+          }
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "item_attribute"
+          }
+        }
+      ]
+    },
+    "axiom_definition": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "axiom"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_attribute"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_value_name"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_parameter"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "="
+        },
+        {
+          "type": "FIELD",
+          "name": "body",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sequence_expression"
+          }
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "item_attribute"
+          }
+        }
+      ]
+    },
+    "theorem_definition": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "theorem"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_attribute"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_value_name"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_parameter"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "="
+        },
+        {
+          "type": "FIELD",
+          "name": "statement",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sequence_expression"
+          }
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "item_attribute"
+          }
+        }
+      ]
+    },
+    "lemma_definition": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "lemma"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_attribute"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_value_name"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_parameter"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "="
+        },
+        {
+          "type": "FIELD",
+          "name": "statement",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sequence_expression"
+          }
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "item_attribute"
+          }
+        }
+      ]
+    },
+    "verify_statement": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "verify"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_attribute"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "FIELD",
+          "name": "specification",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sequence_expression"
+          }
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "item_attribute"
+          }
+        }
+      ]
+    },
+    "instance_statement": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "instance"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_attribute"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "FIELD",
+          "name": "specification",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sequence_expression"
+          }
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "item_attribute"
+          }
+        }
+      ]
+    },
+    "eval_statement": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "eval"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_attribute"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "FIELD",
+          "name": "expression",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_sequence_expression"
           }
         },
         {
@@ -11707,6 +11992,30 @@
       {
         "type": "STRING",
         "value": "when"
+      },
+      {
+        "type": "STRING",
+        "value": "axiom"
+      },
+      {
+        "type": "STRING",
+        "value": "theorem"
+      },
+      {
+        "type": "STRING",
+        "value": "lemma"
+      },
+      {
+        "type": "STRING",
+        "value": "verify"
+      },
+      {
+        "type": "STRING",
+        "value": "instance"
+      },
+      {
+        "type": "STRING",
+        "value": "eval"
       },
       {
         "type": "STRING",

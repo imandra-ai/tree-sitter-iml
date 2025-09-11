@@ -920,11 +920,19 @@
     "named": true,
     "subtypes": [
       {
+        "type": "axiom_definition",
+        "named": true
+      },
+      {
         "type": "class_definition",
         "named": true
       },
       {
         "type": "class_type_definition",
+        "named": true
+      },
+      {
+        "type": "eval_statement",
         "named": true
       },
       {
@@ -944,7 +952,15 @@
         "named": true
       },
       {
+        "type": "instance_statement",
+        "named": true
+      },
+      {
         "type": "item_extension",
+        "named": true
+      },
+      {
+        "type": "lemma_definition",
         "named": true
       },
       {
@@ -964,11 +980,19 @@
         "named": true
       },
       {
+        "type": "theorem_definition",
+        "named": true
+      },
+      {
         "type": "type_definition",
         "named": true
       },
       {
         "type": "value_definition",
+        "named": true
+      },
+      {
+        "type": "verify_statement",
         "named": true
       }
     ]
@@ -1283,6 +1307,48 @@
         },
         {
           "type": "toplevel_directive",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "axiom_definition",
+    "named": true,
+    "fields": {
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "_parameter",
+          "named": true
+        },
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        },
+        {
+          "type": "parenthesized_operator",
+          "named": true
+        },
+        {
+          "type": "value_name",
           "named": true
         }
       ]
@@ -2034,6 +2100,36 @@
     "type": "escape_sequence",
     "named": true,
     "fields": {}
+  },
+  {
+    "type": "eval_statement",
+    "named": true,
+    "fields": {
+      "expression": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "exception_definition",
@@ -2873,6 +2969,36 @@
     }
   },
   {
+    "type": "instance_statement",
+    "named": true,
+    "fields": {
+      "specification": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "instance_variable_definition",
     "named": true,
     "fields": {
@@ -3313,6 +3439,48 @@
       "types": [
         {
           "type": "attribute_id",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "lemma_definition",
+    "named": true,
+    "fields": {
+      "statement": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "_parameter",
+          "named": true
+        },
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        },
+        {
+          "type": "parenthesized_operator",
+          "named": true
+        },
+        {
+          "type": "value_name",
           "named": true
         }
       ]
@@ -5213,6 +5381,48 @@
     }
   },
   {
+    "type": "theorem_definition",
+    "named": true,
+    "fields": {
+      "statement": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "_parameter",
+          "named": true
+        },
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        },
+        {
+          "type": "parenthesized_operator",
+          "named": true
+        },
+        {
+          "type": "value_name",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "toplevel_directive",
     "named": true,
     "fields": {},
@@ -5722,6 +5932,36 @@
     }
   },
   {
+    "type": "verify_statement",
+    "named": true,
+    "fields": {
+      "specification": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "while_expression",
     "named": true,
     "fields": {
@@ -5932,6 +6172,10 @@
     "named": true
   },
   {
+    "type": "axiom",
+    "named": false
+  },
+  {
     "type": "begin",
     "named": false
   },
@@ -5990,6 +6234,10 @@
   },
   {
     "type": "end",
+    "named": false
+  },
+  {
+    "type": "eval",
     "named": false
   },
   {
@@ -6053,6 +6301,10 @@
     "named": false
   },
   {
+    "type": "instance",
+    "named": false
+  },
+  {
     "type": "instance_variable_name",
     "named": true
   },
@@ -6066,6 +6318,10 @@
   },
   {
     "type": "lazy",
+    "named": false
+  },
+  {
+    "type": "lemma",
     "named": false
   },
   {
@@ -6202,6 +6458,10 @@
     "named": false
   },
   {
+    "type": "theorem",
+    "named": false
+  },
+  {
     "type": "to",
     "named": false
   },
@@ -6232,6 +6492,10 @@
   {
     "type": "value_pattern",
     "named": true
+  },
+  {
+    "type": "verify",
+    "named": false
   },
   {
     "type": "virtual",
