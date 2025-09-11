@@ -42,6 +42,7 @@ class EggInfo(egg_info):
         super().find_sources()
         self.filelist.recursive_include("queries", "*.scm")
         self.filelist.include("grammars/ocaml/src/tree_sitter/*.h")
+        self.filelist.include("grammars/iml/src/tree_sitter/*.h")
 
 
 setup(
@@ -63,6 +64,8 @@ setup(
                 "grammars/interface/src/scanner.c",
                 "grammars/type/src/parser.c",
                 "grammars/type/src/scanner.c",
+                "grammars/iml/src/parser.c",
+                "grammars/iml/src/scanner.c",
             ],
             extra_compile_args=cflags,
             define_macros=macros,

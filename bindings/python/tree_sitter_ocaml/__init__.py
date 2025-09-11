@@ -2,7 +2,7 @@
 
 from importlib.resources import files as _files
 
-from ._binding import language_ocaml, language_ocaml_interface, language_ocaml_type
+from ._binding import language_ocaml, language_ocaml_interface, language_ocaml_type, language_iml
 
 
 def _get_query(name, file):
@@ -26,6 +26,7 @@ __all__ = [
     "language_ocaml",
     "language_ocaml_interface",
     "language_ocaml_type",
+    "language_iml",
     "HIGHLIGHTS_QUERY",
     "LOCALS_QUERY",
     "TAGS_QUERY",

@@ -36,19 +36,23 @@ def find_errors(node):
     return errors
 
 
-def create_parser():
-    """Create and return an OCaml parser."""
-
-    ocaml_language_capsule = tree_sitter_ocaml.language_ocaml()
-    ocaml_language = Language(ocaml_language_capsule)
-    print('Successfully loaded local tree-sitter-ocaml')
+def create_parser(use_iml=False):
+    """Create and return an OCaml or IML parser."""
+    if use_iml:
+        language_capsule = tree_sitter_ocaml.language_iml()
+        language = Language(language_capsule)
+        print('Successfully loaded local tree-sitter-iml')
+    else:
+        language_capsule = tree_sitter_ocaml.language_ocaml()
+        language = Language(language_capsule)
+        print('Successfully loaded local tree-sitter-ocaml')
 
     parser = Parser()
-    parser.language = ocaml_language
+    parser.language = language
     return parser
 
 
-def parse_file(file_path, max_depth=None):
+def parse_file(file_path, max_depth=None, use_iml=False):
     """Parse a file and display results."""
     file_path = Path(file_path).resolve()
 
@@ -58,7 +62,7 @@ def parse_file(file_path, max_depth=None):
 
     code = file_path.read_text()
 
-    parser = create_parser()
+    parser = create_parser(use_iml=use_iml)
 
     # Parse the code
     tree = parser.parse(bytes(code, 'utf-8'))
@@ -98,12 +102,17 @@ def main():
     parser.add_argument(
         '--max-depth', type=int, help='Maximum depth to display in parse tree'
     )
+    
+    parser.add_argument(
+        '--iml', action='store_true', help='Use IML parser instead of OCaml parser'
+    )
 
     args = parser.parse_args()
 
     parse_file(
         args.file,
         max_depth=args.max_depth,
+        use_iml=args.iml,
     )
 
 
