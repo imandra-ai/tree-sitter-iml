@@ -14,4 +14,8 @@ theorem double_add_one x =
 
 verify (fun x -> x > 0 ==> double x > x)
 
+let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
+
+verify (fun x -> double_non_negative_is_increasing x)
+
 instance (fun x -> x >= 0 ==> not (double x > x))
