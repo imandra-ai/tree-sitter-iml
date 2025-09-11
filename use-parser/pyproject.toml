@@ -8,6 +8,9 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
+    "devtools>=0.12.2",
+    "rich>=14.1.0",
+    "structlog>=25.4.0",
     "tree-sitter>=0.25.1",
     "tree-sitter-ocaml",
 ]
@@ -54,7 +57,7 @@ select = [
 ignore = [
     "SIM108", # if-else-block-instead-of-if-exp
     "N801",   # Class name should use CapWords
-    "PTH123", # `open()` should be replaced by `Path.open()`
+    # "PTH123", # `open()` should be replaced by `Path.open()`
     "C417",   # Unnecessary `map()` usage (rewrite using a generator expression)
     "D100", # ignore missing docstring in module
     "D102", # ignore missing docstring in public method

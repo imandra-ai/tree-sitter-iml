@@ -1,17 +1,23 @@
 # pyright: basic
+import argparse
 import sys
 from pathlib import Path
 
+import tree_sitter_ocaml
+from rich import print
 from tree_sitter import Language, Parser
 
 
-def print_tree(node, depth=0):
+def print_tree(node, depth=0, max_depth=None):
     """Print the parse tree in a readable format."""
+    if max_depth is not None and depth > max_depth:
+        return
+
     indent = '  ' * depth
     if node.children:
         print(f'{indent}{node.type}')
         for child in node.children:
-            print_tree(child, depth + 1)
+            print_tree(child, depth + 1, max_depth)
     else:
         text = node.text.decode('utf-8') if node.text else ''
         if text.strip():  # Only print non-empty text
@@ -20,63 +26,86 @@ def print_tree(node, depth=0):
             print(f'{indent}{node.type}')
 
 
-def test_ocaml_parser():
-    # Use the local tree-sitter-ocaml package
-    try:
-        import tree_sitter_ocaml
+def find_errors(node):
+    """Recursively find all ERROR nodes in the parse tree."""
+    errors = []
+    if node.type == 'ERROR':
+        errors.append(node)
+    for child in node.children:
+        errors.extend(find_errors(child))
+    return errors
 
-        ocaml_language_capsule = tree_sitter_ocaml.language_ocaml()
-        ocaml_language = Language(ocaml_language_capsule)
-        print('Successfully loaded local tree-sitter-ocaml')
-    except ImportError as e:
-        print(f'Error importing tree_sitter_ocaml: {e}')
-        print("Make sure to run 'uv sync' to install the local package")
-        return
 
-    # Create parser
+def create_parser():
+    """Create and return an OCaml parser."""
+
+    ocaml_language_capsule = tree_sitter_ocaml.language_ocaml()
+    ocaml_language = Language(ocaml_language_capsule)
+    print('Successfully loaded local tree-sitter-ocaml')
+
     parser = Parser()
     parser.language = ocaml_language
+    return parser
 
-    # Test with an IML example that has verification keywords
-    iml_file = Path('../iml_examples/imandrax-examples/ackermann.iml').resolve()
 
-    if not iml_file.exists():
-        print(f'Error: {iml_file} not found')
-        return
+def parse_file(file_path, max_depth=None):
+    """Parse a file and display results."""
+    file_path = Path(file_path).resolve()
 
-    with open(iml_file) as f:
-        code = f.read()
+    if not file_path.exists():
+        print(f'Error: {file_path} not found')
+        return None
 
-    print(f'Parsing {iml_file.name}...')
-    print('=' * 50)
-    print(code[:200] + '...' if len(code) > 200 else code)
-    print('=' * 50)
+    code = file_path.read_text()
+
+    parser = create_parser()
 
     # Parse the code
     tree = parser.parse(bytes(code, 'utf-8'))
 
     print('Parse tree:')
-    print_tree(tree.root_node)
+    print_tree(tree.root_node, max_depth=max_depth)
 
     # Check for errors
-    def find_errors(node):
-        errors = []
-        if node.type == 'ERROR':
-            errors.append(node)
-        for child in node.children:
-            errors.extend(find_errors(child))
-        return errors
-
     errors = find_errors(tree.root_node)
     if errors:
         print(f'\nFound {len(errors)} parse errors:')
         for i, error in enumerate(errors):
-            print(
-                f'  Error {i + 1}: {error.text.decode("utf-8") if error.text else "Unknown error"}'
-            )
+            error_text = error.text.decode('utf-8') if error.text else 'Unknown error'
+            # Truncate long error messages
+            if len(error_text) > 100:
+                error_text = error_text[:100] + '...'
+            print(f'  Error {i + 1}: {error_text}')
     else:
         print('\nNo parse errors found!')
 
+    return tree
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Parse OCaml/IML files with tree-sitter-ocaml',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        'file',
+        nargs='?',
+        default='../iml_examples/code-logician-examples/six_swiss.iml',
+        help='Path to the OCaml/IML file to parse (default: six_swiss.iml example)',
+    )
+
+    parser.add_argument(
+        '--max-depth', type=int, help='Maximum depth to display in parse tree'
+    )
+
+    args = parser.parse_args()
+
+    parse_file(
+        args.file,
+        max_depth=args.max_depth,
+    )
+
 
 if __name__ == '__main__':
-    test_ocaml_parser()
+    main()
