@@ -1,0 +1,42 @@
+(* Proof of a correct change theorem in ImandraX *)
+(* G.Passmore, Imandra *)
+
+type pocket = { 
+    num_3s : int;
+    num_5s : int; 
+}
+
+let mk_pocket a b =
+    { num_3s = a;
+      num_5s = b }
+
+let rec mk_change (n) =
+    if n <= 7 then None
+    else
+      match n with
+      | 8 -> Some (mk_pocket 1 1)
+      | 9 -> Some (mk_pocket 3 0)
+      | 10 -> Some (mk_pocket 0 2)
+      | _ ->
+        begin match mk_change (n-3) with
+        | Some p ->
+            let a = p.num_3s in
+            let b = p.num_5s in
+            Some (mk_pocket (a+1) b)
+        | None -> None
+        end
+
+eval mk_change 10
+eval mk_change 12
+eval mk_change 13
+
+let eval_pocket (p) =
+  match p with
+  | None -> 0
+  | Some p -> 3 * p.num_3s + 5 * p.num_5s
+  
+(* A beautiful theorem! *)  
+theorem coin_completeness (n) =
+  (n >= 8) ==> eval_pocket (mk_change n) = n
+[@@by auto]
+

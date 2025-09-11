@@ -1,0 +1,33 @@
+(* Some theorems about fulcrum in ImandraX! *)
+(* G.Passmore, Imandra *)
+
+let rec sum (xs : int list) : int =
+    match xs with
+    | [] -> 0
+    | x :: xs' -> x + sum xs'
+  
+let rec fulcrum_inner (xs : int list) (ys : int list) (i : int) : int * int =
+    let fv = abs (sum xs - sum ys) in
+    match ys with
+    | [] -> (i, fv)
+    | y :: ys' ->
+      let best_i, best_fv = fulcrum_inner (y :: xs) ys' (i + 1) in
+      if fv < best_fv then (i, fv) else (best_i, best_fv)
+[@@adm ys]
+  
+let fulcrum (ys : int list) : int =
+  let i, _ = fulcrum_inner [] ys 0 in i
+  
+theorem f_lower_bound = (fun xs ys i ->
+  let a, _ = (fulcrum_inner xs ys i) [@trigger] in a >= i
+) [@@by auto] [@@fc]
+  
+theorem f_upper_bound = (fun xs ys i ->
+  let a, _ = (fulcrum_inner xs ys i) [@trigger] in a <= List.length ys + i
+) [@@by auto] [@@fc]
+  
+(* The main goal! *)  
+theorem main = (fun ys ->
+   let i = fulcrum ys in
+      0 <= i && i <= List.length ys
+) [@@by auto]

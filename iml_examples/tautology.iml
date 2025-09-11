@@ -1,0 +1,361 @@
+(* A verified tautology checker (`unordered BDD`-style (Boyer-Moore '79) SAT solver) in Imandra *)
+(* G. Passmore, Imandra *)
+
+type formula =
+  | True
+  | False
+  | Var of int
+  | If of formula * formula * formula
+
+let rec if_depth (f : formula) =
+  match f with
+  | If (c, _, _) -> 1 + if_depth c
+  | _ -> 0
+
+lemma if_depth_psd f =
+ (if_depth f) [@trigger] >= 0
+[@@by auto] [@@fc]
+
+let rec if_complexity (f : formula) =
+  match f with
+  | If (c, l, r) ->
+    (if_complexity c) * (if_complexity l + if_complexity r)
+  | _ -> 1
+
+lemma arith_helper_0 x y =
+  (x > 0 && y > 0) ==> x * y > 0
+
+lemma arith_helper_1 x y z =
+  x > 0 && y > 0 && z > 0 ==> x * (y + z) > 0
+[@@by [%use arith_helper_0 x (y+z)] @> auto] [@@fc]
+
+lemma arith_helper x y z =
+  x * (y + z) <= 0 ==> x <= 0 || y <= 0 || z <= 0
+[@@by auto] [@@fc]
+
+lemma if_complexity_pos f =
+  (if_complexity f) [@trigger] > 0
+[@@by induct ~otf:true ()] [@@fc]
+
+let n_measure (f : formula) =
+  let o1 = Ordinal.of_int (if_complexity f) in
+  let o2 = Ordinal.of_int (if_depth f) in
+  Ordinal.pair o1 o2
+
+(* Normalise: Place If's into normal form by applying the
+    equivalence
+
+      If (If (p, q, r), left, right)
+       =
+      If (p, If (q, left, right),
+             If (r, left, right)).
+
+   This makes tautology checking easy.
+   Of course this normalisation may have exponential blow-up!
+   We provide an ordinal-based termination measure.
+ *)
+
+lemma n_measure_valid f =
+  Ordinal.is_valid (n_measure f)
+[@@by auto] [@@rw]
+
+lemma elim_n_measure f g =
+  Ordinal.(n_measure f << n_measure g)
+= (if_complexity f < if_complexity g
+   || (if_complexity f = if_complexity g
+       && if_depth f < if_depth g))
+[@@by auto] [@@rw]
+
+[@@@disable n_measure]
+[@@@disable Ordinal.is_valid]
+
+let rec normalise (f : formula) =
+  match f with
+    If (If (p, q, r), left, right) ->
+    normalise
+      (If (p,
+           If (q, left, right),
+           If (r, left, right)))
+  | If (c, left, right) ->
+    If (c, normalise left, normalise right)
+  | _ -> f
+[@@measure n_measure f]
+[@@by auto]
+
+(* Evaluate a formula in a binding environment *)
+
+type binding = { var_id : int;
+                 value  : bool }
+
+let rec look_up var_id bindings =
+  match bindings with
+  | [] -> false
+  | b :: bs ->
+     if b.var_id = var_id then b.value
+     else look_up var_id bs
+
+let rec eval_ f bindings =
+  match f with
+  | Var n -> look_up n bindings
+  | If (c,l,r) ->
+     if eval_ c bindings then
+       eval_ l bindings
+     else
+       eval_ r bindings
+  | True -> true
+  | False -> false
+
+let rec is_assigned var_id bindings =
+  match bindings with
+  | [] -> false
+  | b :: bs ->
+     b.var_id = var_id
+     || is_assigned var_id bs
+
+let assume_true var_id bindings =
+  let b = { var_id = var_id;
+            value  = true }
+  in
+  b :: bindings
+
+let assume_false var_id bindings =
+  let b = { var_id = var_id;
+            value  = false }
+  in
+  b :: bindings
+
+(* Main tautology checker for If-normal terms *)
+let rec is_tautology' f bs =
+  match f with
+  | True -> true
+  | False -> false
+  | Var _ -> eval_ f bs
+  | If (Var n, l, r) ->
+     if is_assigned n bs then
+       if eval_ (Var n) bs then
+         is_tautology' l bs
+       else is_tautology' r bs
+     else
+       if is_tautology' l (assume_true n bs)
+       then is_tautology' r (assume_false n bs)
+       else false
+  | If (True, l, _) ->
+     is_tautology' l bs
+  | If (False, _, r) ->
+     is_tautology' r bs
+  | _ -> false
+
+let is_tautology f =
+  is_tautology' (normalise f) []
+
+(* Now, let's prove it's correct! *)
+let rec is_normal f =
+  match f with
+  | If (If _, _, _) -> false
+  | If (_, p, q) ->
+    if is_normal p then is_normal q else false
+  | _ -> true
+
+(* If we're a tautology under some binding environment,
+   and we extend that environment `at the end,'
+   then we're still a tautology. *)
+theorem look_up_stable var_id a b =
+  look_up var_id (a @ b)
+  =
+    if is_assigned var_id a then
+      look_up var_id a
+    else
+      look_up var_id b
+[@@by auto] [@@rw]
+
+lemma true_is_assigned x a =
+  look_up x a ==> is_assigned x a
+[@@by auto] [@@rw]
+
+(* If we add a redundant (same id and val) binding to the
+   front of the bindings, the evaluation doesn't change. *)
+
+lemma eval_stable f var_id value bs =
+  value = look_up var_id bs
+  ==>
+  eval_ f ({ var_id; value } :: bs)
+   = eval_ f bs
+[@@by auto] [@@rw]
+
+(* Key soundness lemma - this needs `eval_stable` above *)
+
+theorem tautology_implies_eval f a b =
+  is_normal f
+  && is_tautology' f b
+    ==>
+   eval_ f (b @ a)
+[@@by auto] [@@rw] [@@timeout 60]
+
+(* Normalise normalises *)
+
+theorem normalise_correct f =
+  is_normal (normalise f)
+[@@by auto] [@@rw]
+
+theorem normalise_same f =
+  is_normal f ==> normalise f = f
+[@@by auto] [@@rw]
+
+(* Normalise doesn't change evaluation *)
+
+theorem normalise_respects_truth f bs =
+  eval_ (normalise f) bs = eval_ f bs
+[@@by auto] [@@rw]
+
+(* Final soundness theorem! *)
+
+theorem tautology_theorem f bindings =
+  is_tautology f
+   ==>
+  eval_ f bindings
+[@@by [%use tautology_implies_eval (normalise f) bindings []]
+   @> auto]
+
+(* Great, so we're sound!
+   Now, let's establish completeness of the method. *)
+
+type falsify_result = {
+  falsified : bool;
+  bindings  : binding list;
+}
+
+let rec falsify' f bs : falsify_result =
+  match f with
+  | True -> {falsified = false; bindings = []}
+  | False -> {falsified = true; bindings = bs}
+  | Var i ->
+     if is_assigned i bs
+     then if eval_ (Var i) bs then
+         {falsified = false; bindings = []}
+       else {falsified = true; bindings = bs}
+     else
+      {falsified = true; bindings = ({ var_id = i; value = false } :: bs)}
+  | If (Var i, l, r) ->
+     if is_assigned i bs then
+       if eval_ (Var i) bs then
+         falsify' l bs
+       else falsify' r bs
+     else
+       let res_l = falsify' l (assume_true i bs) in
+       begin match res_l with
+         | {falsified=false;_} -> falsify' r (assume_false i bs)
+         | _ -> res_l
+       end
+  | If (True, l, _) ->
+     falsify' l bs
+  | If (False, _, r) ->
+     falsify' r bs
+  | _ -> {falsified=false; bindings = []}
+
+(*
+
+  We also want the (falsify' (Destruct(Var, 0, Destruct(ITE, 0, f)))
+                             (assume_true (Destruct(Var, 0, Destruct(ITE, 0, f))) bs))
+   inductive hypothesis.
+
+  How to get?
+
+   (Is_a(Var, Destruct(ITE, 0, f)) && Is_a(ITE, f))
+   && not (is_assigned (Destruct(Var, 0, Destruct(ITE, 0, f))) bs)
+   && φ (assume_true (Destruct(Var, 0, Destruct(ITE, 0, f))) bs)
+        (Destruct(ITE, 1, f))
+     ==> φ bs f)
+
+  Ah! This weird case comes from Sequence!
+  Idea: Ignore the LHS of a Sequence during Induct_scheme construction.
+
+   *)
+
+let falsify f =
+  falsify' (normalise f) []
+
+theorem non_taut_is_falsified f bs =
+  is_normal f
+  && not (is_tautology' f bs)
+   ==>
+  (falsify' f bs).falsified = true
+[@@by induct ~on_fun:[%id is_tautology'] ()] 
+[@@rw]
+
+lemma falsify_extends_bindings f bs i =
+   is_assigned i bs
+    && (falsify' f bs).falsified
+  ==>
+   look_up i (falsify' f bs).bindings
+    = look_up i bs
+[@@by auto] [@@rw]
+
+(*
+   We want an induction like this:
+
+     (AND (IMPLIES (AND (IF-EXPRP f)
+                         (eval (TEST f) (falsify' f bs))
+                         (φ (TEST f) bs)
+                         (φ (LEFT-BRANCH f) bs)
+                         (φ (LEFT-BRANCH f)
+                            (assume_true (TEST f) bs)))
+                    (φ f bs))
+           (IMPLIES (AND (IF-EXPRP f)
+                         (not (eval (TEST f) (falsify' f bs)))
+                         (φ (TEST f) bs)
+                         (φ (RIGHT-BRANCH f) bs)
+                         (φ (RIGHT-BRANCH f)
+                            (assume_false (TEST f) bs)))
+                    (φ f bs))
+           (IMPLIES (NOT (IF-EXPRP f)) (φ f bs))).
+
+   TODO: Enhance AFI so it can construct this merge itself!
+   AFAICS, we should be able to get this from merging schemes
+   from falsify' and eval.
+*)
+
+let rec ff_ind_hint x bs =
+  match x with
+  | If (Var i as c, a, b) ->
+     if eval_ c (falsify' x bs).bindings then
+       ff_ind_hint c bs
+       && ff_ind_hint a bs
+       && ff_ind_hint a (assume_true i bs)
+     else
+       ff_ind_hint c bs
+       && ff_ind_hint b bs
+       && ff_ind_hint b (assume_false i bs)
+  | If (True, a, _) ->
+     ff_ind_hint a bs
+  | If (False, _, b) ->
+     ff_ind_hint b bs
+  | _ -> true
+
+lemma falsify_falsifies x bs =
+  is_normal x
+  && (falsify' x bs).falsified
+   ==>
+   eval_ x (falsify' x bs).bindings = false
+[@@by induct ~on_fun:[%id ff_ind_hint] ()]
+[@@disable look_up]
+[@@rw] [@@timeout 120]
+
+(* Now, let's put it all together *)
+
+lemma completeness_helper f =
+  not (is_tautology f)
+    ==>
+  eval_ (normalise f) (falsify f).bindings = false
+[@@by [%use falsify_falsifies (normalise f) []]
+   @> [%use non_taut_is_falsified (normalise f) []]
+   @> auto]
+[@@disable normalise_respects_truth, is_normal, normalise]
+
+(* Our final theorem: The method is complete! *)
+
+theorem completeness f =
+  not (is_tautology f)
+    ==>
+  eval_ f (falsify f).bindings = false
+[@@by [%use completeness_helper f] @> auto]
+[@@disable is_normal, normalise, eval_, falsify, is_tautology]

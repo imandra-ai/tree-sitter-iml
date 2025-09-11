@@ -1,0 +1,158 @@
+(* Correctness of a Towers of Hanoi player in ImandraX!
+   G.Passmore, Imandra  *)
+
+type peg = A | B | C
+
+type move = {
+  src: peg;
+  dest: peg;
+ }
+ 
+type state = {
+  a: int list;
+  b: int list;
+  c: int list;
+}
+ 
+(* Move n rows from peg i to peg k via peg j.
+   This is the core of the solver. *)
+ 
+let rec h i j k n =
+  if n <= 0 then []
+  else
+    h i k j (n-1)
+    @ ({src=i; dest=k} :: h j i k (n-1))
+ 
+(* Solve the initial game for n discs! *)
+ 
+let hanoi n = h A B C n
+ 
+(* Symbolic stack manipulators for game states *)
+ 
+let get (s : state) (p : peg) =
+  match p with
+  | A -> s.a
+  | B -> s.b
+  | C -> s.c
+ 
+let put (s : state) (p : peg) vs =
+  match p with
+  | A -> {s with a=vs}
+  | B -> {s with b=vs}
+  | C -> {s with c=vs}
+ 
+(* Is a move legal w.r.t. a given game state? *)
+ 
+let legal_move m s =
+  m.src <> m.dest
+  && get s m.src <> []
+  && if get s m.dest <> [] then
+        List.hd (get s m.src)
+        < List.hd (get s m.dest)
+     else true
+ 
+(* Make a move *)
+ 
+let do_move m s =
+  let stack_a = get s m.src in
+  let stack_b = get s m.dest in
+  put
+    (put s m.dest ((List.hd stack_a) :: stack_b))
+     m.src (List.tl stack_a)
+ 
+(* Make a sequence of moves *)
+ 
+let rec play ms s =
+  match ms with
+  | m :: ms ->
+    if legal_move m s then
+       play ms (do_move m s)
+    else
+       None
+  | [] -> Some s
+ 
+(* Build a tower of size n *)
+ 
+let rec tower n =
+  if n <= 0 then []
+  else
+   tower (n-1) @ [n]
+ 
+ (* Let's see an example and verify it in the logic *)
+ 
+ lemma example =
+   play (hanoi 7) {a=tower 7; b=[]; c=[]} = Some {a=[]; b=[]; c=tower 7}
+ [@@by simplify ()]
+ 
+ (* Now, let's verify our player/solver! *)
+ 
+ (* Rules to characterize get and put *)
+ 
+lemma get_put_eq i j s v =
+  i=j ==> get (put s j v) i = v
+[@@by auto] [@@rw]
+ 
+lemma get_put_ineq i j s v =
+  i<>j ==> get (put s j v) i = get s i
+[@@by auto] [@@rw]
+
+lemma put_get i s =
+  put s i (get s i) = s
+[@@by auto] [@@rw]
+ 
+lemma put_put w v i s =
+  put (put s i w) i v = put s i v
+[@@by auto] [@@rw]
+ 
+ (* Always important for games: play-append! *)
+ 
+ lemma play_app moves1 moves2 s =
+   play (moves1 @ moves2) s =
+   match play moves1 s with
+   | Some s' -> play moves2 s'
+   | None -> None
+ [@@by auto] [@@disable get,put] [@@rw]
+ 
+ (* Big_tops: a key invariant for maintaining valid plays *)
+ 
+let big_tops a b c n s =
+  (get s a = [] || n < List.hd (get s a))
+   && (get s b = [] || n < List.hd (get s b))
+   && (get s c = [] || n < List.hd (get s c))
+ 
+ (* A function for specifying the precise induction we'd like. *)
+ 
+let rec induction_hint a b c n s =
+  if n <= 0 then true
+  else
+    (induction_hint a c b (n-1) (put s a (n :: (get s a)))
+      &&
+     induction_hint b a c (n-1) (put s c (n :: (get s c))))
+[@@measure Ordinal.of_int n]
+[@@by auto] 
+
+ (* Symbolic a,b and c are distinct pegs *)
+ 
+ let all_diff a b c =
+   a <> b && a <> c && b <> c
+ 
+ (* Key lemma!
+ 
+    Note: We can prove bounded versions (e.g. n <= 4) just via unrolling. *)
+ 
+lemma key a b c n s =
+  big_tops a b c n s
+  && all_diff a b c
+   ==>
+     (play (h a b c n)
+           (put s a (tower n @ get s a)))
+      = Some (put s c (tower n @ get s c))
+ [@@by induct ~on_fun:[%id induction_hint] ()]
+ [@@disable big_tops,legal_move,get,put]
+ 
+ (* Our final theorem! *)
+ 
+theorem main n =
+  play (hanoi n) {a=tower n; b=[]; c=[]} = Some {a=[]; b=[]; c=tower n}
+[@@by [%use key A B C n {a=[]; b=[]; c=[]}]
+   @> auto]

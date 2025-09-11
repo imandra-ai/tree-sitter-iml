@@ -1,0 +1,168 @@
+(* Verified Quick Sort in ImandraX! *)
+(* This version based on a fc-heavy proof originally done by Simon's friend Raphael! *)
+(* G.Passmore, Imandra *)
+
+let rec smalls l p = match l with
+| [] -> []
+| hd :: tl -> if hd <= p then hd :: smalls tl p else smalls tl p
+
+let rec bigs l p = match l with
+| [] -> []
+| hd :: tl -> if hd <= p then bigs tl p else hd :: bigs tl p
+
+let rec partition l p = match l with
+| [] -> ([], [])
+| hd :: tl ->
+  let (l1, l2) = partition tl p in
+  if hd <= p then (hd :: l1, l2) else (l1, hd :: l2)
+
+theorem partition_smalls_bigs l p =
+  partition l p = (smalls l p, bigs l p)
+[@@by auto] [@@rw]
+
+let quicksort_measure l = Ordinal.of_int (List.length l)
+
+theorem smalls_length l p =
+  List.length (smalls l p) [@trigger] <= List.length l
+[@@by auto] [@@fc]
+
+theorem bigs_length l p =
+  List.length (bigs l p) [@trigger] <= List.length l
+[@@by auto] [@@fc]
+
+let rec quicksort l = match l with
+| [] -> []
+| hd :: tl ->
+  let (l1, l2) = (smalls tl hd, bigs tl hd) (* partition tl hd *) in
+  quicksort l1 @ (hd :: quicksort l2)
+[@@measure quicksort_measure l]
+[@@by auto]
+
+let rec subset l1 l2 = match l1 with
+| [] -> true
+| hd :: tl -> List.mem hd l2 && subset tl l2
+
+theorem subset_cons a l1 l2 =
+  subset l1 l2 ==> (subset l1 (a :: l2) [@trigger])
+ [@@by auto] [@@fc]
+
+theorem subset_append l1 l2 l3 =
+  subset (List.append l1 l2) l3 = (subset l1 l3 && subset l2 l3)
+[@@by auto] [@@rw]
+
+(* There is a much more direct proof if we induct on `l3`.
+   Currently AFI finds a longer alternative proof by first inducting on l1. *)
+theorem subset_weaken_left l1 l2 l3 =
+  subset l1 l2 ==> subset l1 (List.append l3 l2) [@trigger]
+[@@by auto] [@@fc]
+
+theorem mem_append a l1 l2 =
+  List.mem a (List.append l1 l2) = (List.mem a l1 || List.mem a l2)
+[@@by auto] [@@rw]
+
+theorem subset_weaken_right l1 l2 l3 =
+  subset l1 l2 ==> subset l1 (List.append l2 l3) [@trigger]
+[@@by auto] [@@fc]
+
+theorem subset_in a l1 l2 =
+  (List.mem a l1 [@trigger 0n]) &&
+  (subset l1 l2 [@trigger 0n]) ==>
+  List.mem a l2
+[@@by auto] [@@fc]
+
+theorem subset_trans l1 l2 l3 =
+  subset l2 l3 &&
+  (subset l1 l2 [@trigger 0n])
+  ==>
+  (subset l1 l3 [@trigger 0n])
+ [@@by auto] [@@fc]
+
+theorem bigs_subset l p = subset (bigs l p [@trigger]) l [@@by auto] [@@fc]
+theorem smalls_subset l p = subset (smalls l p [@trigger]) l [@@by auto] [@@fc]
+
+theorem bigs_subset_weak l p = subset (bigs l p [@trigger]) (p :: l) [@@by auto] [@@fc]
+theorem smalls_subset_weak l p = subset (smalls l p [@trigger]) (p :: l) [@@by auto] [@@fc]
+
+theorem quicksort_subset l = subset (quicksort l [@trigger]) l
+[@@by auto] [@@fc]
+
+theorem mem_insert a b l1 l2 =
+  List.mem a (List.append l1 l2) ==>
+  (List.mem a (List.append l1 (b :: l2)) [@trigger])
+[@@by auto] [@@fc]
+
+(* AFI needs to pick induction on l1.
+   With scheme subsumption, it now does! *)
+theorem subset_insert a l1 l2 l3 =
+  subset l1 (List.append l2 l3) ==>
+  (subset l1 (List.append l2 (a :: l3)) [@trigger])
+[@@by auto] [@@fc]
+
+theorem quicksort_superset_aux p l1 l2 l3 =
+  (subset (smalls l1 p) l2 [@trigger 0n]) &&
+  (subset (bigs l1 p) l3 [@trigger 0n]) ==>
+  subset l1 (List.append l2 (p :: l3))
+[@@by auto] [@@fc]
+
+(* Needs `quicksort` to win over `subset` for subsumption.
+   This needs merging. *)
+
+theorem quicksort_superset l = subset l (quicksort l) [@@by auto]
+
+let rec upper_bound b l = match l with
+| [] -> true
+| hd :: tl -> hd <= b && upper_bound b tl
+
+let rec lower_bound b l = match l with
+| [] -> true
+| hd :: tl -> hd >= b && lower_bound b tl
+
+let rec sorted = function
+| [] | [_] -> true
+| a :: (b :: l as tl) -> a <= b && sorted tl
+
+theorem upper_in a p l =
+  (upper_bound p l [@trigger 0n]) &&
+  (List.mem a l [@trigger 0n]) ==> a <= p
+[@@by auto] [@@fc]
+
+theorem lower_in a p l =
+  (lower_bound p l [@trigger 0n]) &&
+  (List.mem a l [@trigger 0n]) ==> a >= p
+[@@by auto] [@@fc]
+
+(* AFI used to need manual `l1` hint.
+   Now it doesn't! *)
+theorem upper_subset p l1 l2 = 
+  (subset l1 l2 [@trigger 0n]) &&
+  (upper_bound p l2 [@trigger 0n]) ==>
+  upper_bound p l1
+[@@by auto] [@@fc]
+
+(* AFI currently needs manual `l1` hint.
+   Now it doesn't! *)
+theorem lower_subset p l1 l2 = 
+  (subset l1 l2 [@trigger 0n]) &&
+  (lower_bound p l2 [@trigger 0n]) ==>
+  lower_bound p l1
+[@@by auto] [@@fc]
+
+theorem smalls_upper b l = upper_bound b (smalls l b) [@@by auto] [@@rw]
+theorem bigs_lower b l = lower_bound b (bigs l b) [@@by auto] [@@rw]
+
+(* 1684 assertion failure for polymorphism in DE. We can still find a proof by disabling DE,
+   but we should fix DE! *)
+theorem sorted_append l1 a l2 =
+  sorted (List.append l1 (a :: l2)) = (upper_bound a l1 && lower_bound a l2 && sorted l1 && sorted l2)
+[@@by induct ~do_not:["delim"] ()] [@@rw] [@@timeout 20]
+
+theorem quicksort_subset_lower p l =
+  subset (quicksort l) l && lower_bound p l ==> lower_bound p (quicksort l)
+[@@by auto] [@@rw]
+
+theorem quicksort_subset_upper p l =
+  subset (quicksort l) l && upper_bound p l ==> upper_bound p (quicksort l)
+[@@by auto] [@@rw]
+
+(* With AFI, [@@auto functional quicksort] hint not required! *)
+theorem quicksort_sorted l = sorted (quicksort l) [@@by auto]

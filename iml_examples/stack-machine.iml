@@ -1,0 +1,285 @@
+(* A simple stack machine and a proof about a program in ImandraX *)
+(* G.Passmore, Imandra *)
+
+type instr = 
+  | Halt
+  | Const of int
+  | Load of reg
+  | Store of reg
+  | If_leq of int
+  | Goto of int
+  | Sub
+  | Add
+
+and reg = RA | RN
+
+type prog = instr list
+
+(* An example program we'll reason about:
+   a loop to compute the sum 1+2+...+n *)
+
+let ex : prog = [
+    Const 0;
+    Store RA;
+    Load RN;
+    If_leq 10;
+    Load RN;
+    Load RA;
+    Add;
+    Store RA;
+    Load RN;
+    Const 1;
+    Sub;
+    Store RN;
+    Goto (-10);
+    Halt;
+]
+
+type state = {
+    halted: bool;
+    prog: prog;
+    pc: int;
+    stack: int list;
+    ra: int;
+    rn: int;
+}
+
+let get_instr prog pc =
+    List.nth pc prog
+
+let inc_pc s = 
+    { s with pc = s.pc + 1 }
+
+let load_reg s r =
+  let v = match r with
+  | RA -> s.ra
+  | RN -> s.rn
+  in
+  { s with stack = v :: s.stack }
+
+let pop_stack s = { s with stack = List.tl s.stack }
+
+let store_val s r v =
+  match r with
+  | RA -> { s with ra = v }
+  | RN -> { s with rn = v }
+
+let store_reg s r =
+  match s.stack with
+  | v :: vs ->
+    pop_stack (store_val s r v)
+  | [] ->
+    store_val s r 0
+
+let instr_add s = match s.stack with
+  | a :: b :: rst ->
+    { s with stack = (a+b) :: rst }
+  | _ -> s
+
+let instr_sub s = match s.stack with
+  | a :: b :: rst ->
+    { s with stack = (b-a) :: rst }
+  | _ -> s
+
+let instr_if_leq s delta_pc =
+  match s.stack with
+  | v :: vs ->
+    if v <= 0 then (
+        { s with pc = s.pc + delta_pc; stack = vs }
+    ) else (
+        { s with stack = vs; pc = s.pc + 1 }
+    )
+  | [] -> s
+
+let step (s : state) : state =
+  if s.halted then s else
+  match get_instr s.prog s.pc with
+  | None -> s
+  | Some i ->
+    begin match i with
+    | Halt -> { s with halted = true }
+    | Const k ->
+      inc_pc { s with stack = k :: s.stack }
+    | Load r -> inc_pc (load_reg s r)
+    | Store r -> inc_pc (store_reg s r)
+    | Add -> inc_pc (instr_add s)
+    | Sub -> inc_pc (instr_sub s)
+    | If_leq delta_pc -> instr_if_leq s delta_pc
+    | Goto delta_pc -> { s with pc = s.pc + delta_pc }
+    end
+
+let rec run (s : state) n = 
+    if n <= 0 then s
+    else run (step s) (n-1)
+
+eval (run { halted=false; prog=ex; pc=0; stack=[]; ra=0; rn=10 }) (10*11 + 5)
+
+eval (run { halted=false; prog=ex; pc=0; stack=[]; ra=10; rn=(-1) }) (10*11 + 5)
+
+let rec sum n =
+    if n <= 0 then 0
+    else n + sum(n-1)
+
+lemma step_of_halted s =
+  s.halted ==> step s = s
+[@@by auto] [@@rw]
+
+lemma run_of_halted s n =
+  s.halted ==> run s n = s
+[@@by auto] [@@rw] [@@disable step]
+
+(* Part I: Lines 0-1 initialize RB=0. *)
+
+lemma program_init stack ra rn s steps =
+  steps >= 2
+  && s = { halted=false; prog=ex; pc=0; stack; ra; rn }
+  ==>
+  run s steps
+  = run { halted=false; prog=ex; pc=2; stack; ra=0; rn} (steps-2)
+[@@by auto]
+
+(* Part II: Lines 2-3 and the loop condition base case *)
+
+(* when ra <= 0 *)
+lemma program_steps_2_3 stack ra rn s steps =
+  steps >= 2
+  && s = { halted=false; prog=ex; pc=2; stack; ra; rn }
+  && rn <= 0  
+  ==>
+  run s steps
+  = run { halted=false; prog=ex; pc=13; stack; ra; rn} (steps-2)
+[@@by unroll 20]
+
+lemma instr_table_plain =
+  (List.nth 0 ex = Some (Const 0))
+  && (List.nth 1 ex = Some (Store RA))
+  && (List.nth 2 ex = Some (Load RN))
+  && (List.nth 3 ex = Some (If_leq 10))
+  && (List.nth 4 ex = Some (Load RN))
+  && (List.nth 5 ex = Some (Load RA))
+  && (List.nth 6 ex = Some (Add))
+  && (List.nth 7 ex = Some (Store RA))
+  && (List.nth 8 ex = Some (Load RN))
+  && (List.nth 9 ex = Some (Const 1))
+  && (List.nth 10 ex = Some (Sub))
+  && (List.nth 11 ex = Some (Store RN))
+  && (List.nth 12 ex = Some (Goto (-10)))
+  && (List.nth 13 ex = Some Halt)
+[@@by auto]
+
+lemma program_step_13 s =
+  s.pc = 13 && s.prog = ex && s.halted = false
+  ==>
+  step s
+  = { s with halted = true }
+[@@by unroll 50]
+
+lemma program_base_case stack ra rn s steps =
+  steps >= 3
+  && s = { halted=false; prog=ex; pc=2; stack; ra; rn }
+  && rn <= 0  
+  ==>
+  run s steps
+  = { s with halted = true; pc = 13 }
+[@@by [%use program_steps_2_3 stack ra rn s steps]
+   @> [%use program_step_13 {halted=false; pc=13; prog=ex; stack; ra; rn}]
+   @> auto]
+
+lemma program_loop_body stack ra rn s steps =
+  steps >= 11
+  && rn > 0
+  && s = { halted=false; prog=ex; pc=2; stack; ra; rn }
+  ==>
+  run s steps
+  = run { s with pc=2; ra=ra+rn; rn=(rn-1) } (steps-11)
+[@@by [%use instr_table_plain] @> unroll 200]
+
+(* Key induction principle for reasoning about the loop *)
+
+let rec loop_induct stack ra rn s steps =
+    if rn <= 0 then (
+        s
+    ) else (
+        loop_induct 
+        stack
+        (rn+ra)
+        (rn-1)
+        { 
+          halted=false;
+          prog=ex;
+          pc=2;
+          stack;
+          rn=rn-1;
+          ra=rn+ra;
+         }
+        (steps-11)
+    )
+[@@measure Ordinal.of_int rn]
+
+lemma loop_correct_pos_n stack ra rn s steps =
+  steps >= 11*rn
+  && s = { halted=false; prog=ex; pc=2; stack; ra; rn }
+  && rn > 0
+  ==>
+  run s steps
+   = run { halted=false; prog=ex; pc=2; stack; rn=0; ra=ra+sum rn } 
+         (steps-(11*rn))
+[@@by induction ~id:[%id loop_induct] ()
+   @>| [auto;
+        [%use program_loop_body stack ra rn s steps]
+         @> auto]]
+[@@disable run]
+
+(* Now that we know the loop works for positive n, let's prove that
+   it works for any n. *)
+
+lemma loop_correct stack ra rn s steps =
+   steps >= 11*rn + 3
+   && s = { halted=false; prog=ex; pc=2; stack; ra; rn }
+   && rn >= 0
+   ==>
+   run s steps
+    = (if rn > 0 then 
+       { halted=true; prog=ex; pc=13; stack; rn=0; ra=ra + sum rn }
+       else 
+       { halted=true; prog=ex; pc=13; stack; rn; ra })
+[@@by [%use loop_correct_pos_n stack ra rn s steps]
+   @> [%use program_base_case stack (ra+sum rn) 
+            0
+            {s with pc=2; rn=0; ra = ra + sum rn} 
+            (steps - 11*rn)]
+   @> auto]
+[@@disable run]
+
+(* Now we know the loop works correctly, so we just need to combine
+   that with initialization and finalization and we're done! *)
+
+lemma key stack ra rn s steps =
+  steps >= 11*rn + 5
+  && rn >= 0
+  && s = { halted=false; prog=ex; pc=0; stack; ra; rn }
+  ==>
+  run s steps
+  = (if rn > 0 then 
+      { halted=true; prog=ex; pc=13; stack; rn=0; ra=sum rn }
+     else
+      { halted=true; prog=ex; pc=13; stack; rn; ra=0})
+[@@by [%use program_init stack ra rn s steps]
+       @> [%use program_base_case stack ra rn s steps]
+       @> [%use loop_correct stack 0 rn {s with pc=2; ra=0} (steps-2)]
+       @> auto]
+ 
+(* And now our final correctness theorem! *)
+
+theorem main stack ra rn s steps =
+  steps >= 11*rn + 5
+  && rn >= 0
+  && s = { halted=false; prog=ex; pc=0; stack; ra; rn }
+  ==>
+  match run s steps with
+  { halted; ra; _ } -> 
+    halted=true && ra = sum rn
+  [@@by [%use key stack ra rn s steps]
+     @> auto]
+  [@@disable run]
+ 

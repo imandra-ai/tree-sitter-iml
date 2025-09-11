@@ -1,0 +1,18 @@
+(* A classic induction benchmark involving tree flattening in ImandraX.
+   G.Passmore, Imandra *)
+
+type 'a tree = Node of 'a tree * 'a tree | Leaf of 'a
+
+let rec flatten (x : 'a tree) =
+  match x with
+  | Leaf a -> [a]
+  | Node (a,b) -> flatten a @ flatten b
+
+let rec mc_flatten x ans =
+  match x with
+  | Leaf a -> a :: ans
+  | Node (a, b) -> mc_flatten a (mc_flatten b ans)
+
+theorem mc_flat_elim x ans =
+  mc_flatten x ans = flatten x @ ans
+[@@by auto]

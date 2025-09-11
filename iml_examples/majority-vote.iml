@@ -1,0 +1,53 @@
+(* A proof of correctness of the Boyer-Moore Majority Voting Algorithm (MJRTY)
+   in ImandraX. 
+  
+   G.Passmore, Imandra *)
+
+let rec majority_aux c i xs =
+  match xs with
+  | [] -> c
+  | x::xs ->
+    if i=0 then majority_aux (Some x) 1 xs
+    else majority_aux c (i + (if (Some x)=c then 1 else -1)) xs
+[@@adm xs]
+
+let majority xs =
+  majority_aux None 0 xs
+
+let rec num_occurs c xs =
+  match xs with
+  | [] -> 0
+  | x::xs -> 
+    (if x=c then 1 else 0) + num_occurs c xs
+
+lemma majority_key e c i xs =
+  i >= 0
+  && (i + List.length xs)
+      < 2 * ((if c=(Some e) then i else 0) + num_occurs e xs)
+  ==>
+  majority_aux c i xs = Some e
+[@@by auto]
+
+let is_majority c xs =
+    2 * num_occurs c xs > List.length xs
+
+(* Our main theorem! Note the spec: If a majority element exists, then
+   `majority` computes it. If there is no majority element, then it is
+   free to return any element! *)
+
+lemma majority_is_correct c xs =
+  is_majority c xs
+  ==>
+  majority xs = Some c
+[@@by [%use majority_key c (Some c) 0 xs] @> auto]
+
+(* A fun corrollary: there can be only one majority element! *)
+
+lemma majority_unique c d xs =
+  is_majority c xs
+  && is_majority d xs
+  ==>
+  c=d
+[@@by [%use majority_is_correct c xs]
+   @> [%use majority_is_correct d xs]
+   @> auto]

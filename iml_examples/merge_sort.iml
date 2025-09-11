@@ -1,0 +1,120 @@
+(* Proving correctness of merge sort in ImandraX! 
+   (now with some manual tactic-based proofs, to help users learn.)
+
+  G.Passmore, Imandra *)
+
+let rec merge (l : int list) (m : int list) =
+ match l, m with
+  | [], _ -> m
+  | _, [] -> l
+  | a :: ls, b :: ms ->
+    if a < b then
+     a :: (merge ls m)
+    else
+     b :: (merge l ms)
+[@@adm l, m]
+[@@by auto]
+
+let rec odds l =
+  match l with
+  | []  -> []
+  | [x] -> [x]
+  | x :: _ :: rst -> x :: odds rst
+
+theorem odds_len_1 x =
+  x <> [] && List.tl x <> []
+  ==>
+  (List.length (odds x) [@trigger]) < List.length x
+[@@by induct ~on_fun:[%id odds] ()] [@@fc]
+
+let rec merge_sort l =
+ match l with
+  | []  -> []
+  | [_] -> l
+  | _ :: ls -> merge (merge_sort (odds l)) (merge_sort (odds ls))
+[@@measure Ordinal.of_int (List.length l)]
+
+let rec is_sorted (x : int list) =
+ match x with
+  | []  -> true
+  | [_] -> true
+  | x :: x' :: xs -> x <= x' && is_sorted (x' :: xs)
+
+theorem merge_sorts x y =
+  is_sorted x && is_sorted y
+  ==>
+  is_sorted (merge x y)
+[@@by auto] [@@rw]
+
+(** Main theorem part I: Merge sort sorts! *)
+
+theorem merge_sort_sorts x =
+  is_sorted (merge_sort x)
+[@@by auto]
+
+let rec num_occurs x y =
+ match y with
+  | [] -> 0
+  | hd :: tl when hd = x ->
+    1 + num_occurs x tl
+  | _ :: tl ->
+    num_occurs x tl
+
+theorem num_occur_merge a x y =
+  num_occurs a (merge x y) = num_occurs a x + num_occurs a y
+[@@by auto]
+
+(* Now let's do it manually, for fun! *)
+
+theorem num_occur_merge a x y =
+  num_occurs a (merge x y) = num_occurs a x + num_occurs a y
+[@@by induction ~id:[%id merge] ()
+   @>| [lift_ifs @>>| ([%replace x] <|> [%replace y]) @> simplify (); 
+        [%normalize num_occurs a (merge x y)]
+         @> [%replace num_occurs a (merge x (List.tl y))]
+         @> lift_ifs 
+            @>| [swap (-1) @> [%normalize num_occurs a y] @> trivial; 
+                 [%normalize num_occurs a y] @> arith];
+        [%normalize num_occurs a (merge x y)]
+         @> lift_ifs
+         @>| [[%normalize num_occurs a x]
+               @> [%replace num_occurs a (merge (List.tl x) y)]
+               @> lift_ifs @> trivial; 
+               [%normalize num_occurs a x]
+                @> [%replace num_occurs a (merge (List.tl x) y)]
+                @> arith]]] [@@rw]
+
+theorem num_occurs_arith (x : int list) (a : int) =
+   x <> [] && List.tl x <> []
+   ==>
+   num_occurs a (odds (List.tl x))
+   =
+   num_occurs a x - num_occurs a (odds x)
+[@@by induct ~on_fun:[%id num_occurs] ()] [@@rw]
+
+(* Main theorem part II: Merge sort has the right elements! *)
+
+theorem merge_sort_elements a (x : int list) =
+  num_occurs a x = num_occurs a (merge_sort x)
+[@@by auto]
+
+(* Let's do it manually, for fun! *)
+
+theorem merge_sort_elements a (x : int list) =
+  num_occurs a x = num_occurs a (merge_sort x)
+[@@by induction ()
+   @>| [lift_ifs @>|
+         [[%replace x] @> [%normalize num_occurs a []]
+          @> [%normalize merge_sort []]
+          @> [%normalize num_occurs a []]
+          @> arith; 
+          [%normalize (merge_sort x)]
+          @> lift_ifs
+          @>| [[%replace x] @> trivial; 
+               trivial]
+          ]; 
+        [%normalize num_occurs a (merge_sort x)]
+        @> [%replace num_occurs a (merge_sort (odds x))]
+        @> [%replace num_occurs a (merge_sort (odds (List.tl x)))]
+        @> [%use num_occurs_arith x a]
+        @> arith]]

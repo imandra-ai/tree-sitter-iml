@@ -1,0 +1,53 @@
+(* Correctness of insertion sort in ImandraX *)
+(* G.Passmore, Imandra *)
+
+let rec insert (x : int) xs =
+    match xs with
+    | [] -> [x]
+    | a :: bs ->
+      if x <= a then x :: xs
+      else a :: (insert x bs)
+  
+let rec insert_sort xs =
+    match xs with
+    | [] -> []
+    | x :: xs -> insert x (insert_sort xs)
+  
+let rec is_sorted (x : int list) =
+    match x with
+    | []  -> true
+    | [_] -> true
+    | x :: x' :: xs -> x <= x' && is_sorted (x' :: xs)
+  
+theorem insert_invariant a x =
+   is_sorted x ==> is_sorted (insert a x)
+[@@by auto] [@@rw]
+  
+(* Main theorem part I: insertion sort sorts! *)
+  
+theorem insert_sort_sorts x =
+  is_sorted (insert_sort x)
+[@@by auto]
+  
+let rec num_occurs x y =
+   match y with
+    | [] -> 0
+    | hd :: tl when hd = x ->
+      1 + num_occurs x tl
+    | _ :: tl ->
+      num_occurs x tl
+
+theorem lemma_1 x a =
+  num_occurs a (insert a x) = num_occurs a x + 1
+[@@by auto] [@@rw]
+  
+theorem lemma_2 x a b =
+   a <> b ==> num_occurs b (insert a x) = num_occurs b x
+[@@by auto] [@@rw]  
+ 
+(* Main theorem part II: insertion sort has the right elements! *)
+  
+theorem insert_sort_elements a (x : int list) =
+  num_occurs a x = num_occurs a (insert_sort x)
+[@@by auto]
+  

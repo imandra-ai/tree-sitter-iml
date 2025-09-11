@@ -1,0 +1,102 @@
+(* Verification of a simple expression compiler in ImandraX *)
+(* G.Passmore, Imandra *)
+
+type expr =
+  | Int of int
+  | Plus of expr * expr
+  | Times of expr * expr
+  | Sub of expr * expr
+  | Div of expr * expr
+
+let rec eval_expr e =
+  match e with
+  | Int i -> i
+  | Plus (x,y) ->
+    let e1, e2 = eval_expr x, eval_expr y in
+    e1 + e2
+  | Times (x,y) ->
+    let e1, e2 = eval_expr x, eval_expr y in
+    e1 * e2
+  | Sub (x,y) ->
+    let e1, e2 = eval_expr x, eval_expr y in
+    e1 - e2
+  | Div (x,y) ->
+    let e1, e2 = eval_expr x, eval_expr y in
+    e1 / e2
+
+(* We'll now define a simple stack machine
+   which will be the target of our compilation *)
+
+type instr = 
+  | Add 
+  | Mult 
+  | Minus
+  | Quot
+  | Push of int
+
+type state = {
+  stack : int list;
+}
+
+let apply (s : state) (f : int -> int -> int) =
+  match s.stack with
+  | a :: b :: rst ->
+   { stack = (f a b) :: rst }
+  | _ -> s
+
+let step s inst =
+  match inst with
+  | Add -> apply s (+)
+  | Mult -> apply s ( * )
+  | Minus -> apply s (fun x y -> y - x)
+  | Quot -> apply s (fun x y -> y / x)
+  | Push i -> { stack = i :: s.stack }
+
+let rec run s program =
+  match program with
+  | [] -> s
+  | i :: i' -> run (step s i) i'
+[@@adm program]
+
+(* A compiler from expressions to stack machine programs *)
+
+let rec compile (e : expr) : instr list =
+  match e with
+  | Int i -> [Push i]
+  | Plus (x,y) -> compile x @ compile y @ [Add]
+  | Times (x,y) -> compile x @ compile y @ [Mult]
+  | Sub (x,y) -> compile x @ compile y @ [Minus]
+  | Div (x,y) -> compile x @ compile y @ [Quot]
+
+(* A key lemma about running the machine *)
+
+lemma run_assoc s program_1 program_2 =
+ run s (program_1 @ program_2) = run (run s program_1) program_2
+[@@by auto] [@@rw]
+
+(* Let's define a function to induce an induction scheme suitable
+   for proving correctness of our compiler. *)
+
+let rec compiler_induct s e =
+  let ih s x y = 
+    compiler_induct s x
+    && compiler_induct
+      { stack = (eval_expr x) :: s.stack }
+      y
+  in
+  match e with
+  | Plus (x,y)
+  | Times (x,y)
+  | Sub (x,y) 
+  | Div (x,y) ->
+    ih s x y
+  | _ -> true
+[@@adm e]
+
+(* Our main correctness theorem! *)
+
+theorem compiler_correct s e =
+  run s (compile e) = { stack = (eval_expr e) :: s.stack }
+[@@by induction ~id:[%id compiler_induct] ()
+   @>>| auto] 
+[@@timeout 60]

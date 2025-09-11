@@ -1,0 +1,190 @@
+(* The mutilated chessboard theorem in ImandraX *)
+(* G.Passmore, Imandra *)
+
+type square = {
+    x: int;
+    y: int;
+}
+
+type color = Black | White
+
+type domino = square * square
+
+let color (p:square) : color =
+  if (p.x + p.y) mod 2 = 0 then White else Black
+
+eval color {x=0;y=0}
+eval color {x=0;y=1}
+
+let adjacent (p:square) (q:square) =
+  (p.x = q.x && abs (p.y - q.y) = 1)
+  || (p.y = q.y && abs (p.x - q.x) = 1)
+
+eval adjacent {x=0;y=0} {x=0;y=1}
+eval adjacent {x=0;y=0} {x=1;y=1}
+
+let valid_n_square (n:int) (p:square) =
+  p.x >= 0 && p.x < n
+  && p.y >= 0 && p.y < n
+
+let valid_domino n (d:domino) =
+  let p,q = fst d,snd d in
+  valid_n_square n p 
+  && valid_n_square n q
+  && adjacent p q
+
+(* A board state is a list of covered squares *)
+
+type state = square list
+
+type action = Place of domino
+
+let step n (s:state) (a:action) : state option =
+    match a with
+    | Place ((p,q) as d) ->
+      if valid_domino n d && not (List.mem p s || List.mem q s) then 
+        Some (p :: q :: s)
+      else
+        None
+
+let rec run n (s:state) (acts:action list) =
+  match acts with
+  | [] -> Some s
+  | act::acts ->
+    begin match step n s act with
+    | Some s' -> run n s' acts
+    | None -> None
+    end
+[@@adm acts]
+
+lemma domino_opposite_colors n (d:domino) =
+  valid_domino n d
+  ==>
+  color (fst d) <> color (snd d)
+[@@by auto]
+
+let rec num_white (s:state) : int =
+  match s with
+  | [] -> 0
+  | x::xs ->
+    (if color x = White then 1 else 0)
+    + num_white xs
+
+let rec num_black (s:state) : int =
+    match s with
+    | [] -> 0
+    | x::xs ->
+      (if color x = Black then 1 else 0)
+      + num_black xs
+
+lemma step_color_count s n act =
+  num_white s = num_black s
+  ==>
+  match step n s act with
+  | Some s' -> num_white s' = num_black s'
+  | None -> true
+[@@by auto] [@@rw]
+
+lemma run_color_count n s acts =
+  num_white s = num_black s
+  ==>
+  match run n s acts with
+  | Some s' ->
+    num_white s' = num_black s'
+  | None -> true
+[@@by induction ~id:[%id run] ()
+  @>>| auto] 
+[@@disable step]
+
+lemma run_color_count_from_empty s n acts =
+  s=[]
+  ==>
+  match run n s acts with
+  | Some s' ->
+    num_white s' = num_black s'
+  | None -> true
+[@@by [%use run_color_count n [] acts]
+   @> auto] 
+[@@disable step]
+
+(* Now let's define a mutilated board *)
+
+let rec mk_row y k = 
+  if k < 0 then []
+  else  {x=k; y} :: mk_row y (k-1)
+
+let rec mk_board y n =
+  if y < 0 then []
+  else mk_row y n @ mk_board (y-1) n
+
+eval mk_row 0 7
+eval mk_board 7 7
+
+lemma len_row y k =
+  k >= 0 ==> List.length (mk_row y k) = k + 1
+[@@by auto]
+
+lemma len_board n m =
+  n >= 0 && m >= 0 
+  ==> List.length (mk_board n m) = (n+1) * (m+1)
+[@@by induction ()
+   @>| [auto; 
+        lift_ifs
+        @>| [swap (-2) @> [%subgoal n=0]
+        @>| [[%replace n] @> [%normalize mk_board 0 m]
+            @> lift_ifs
+            @>| [[%normalize mk_row 0 m]
+                @> [%normalize List.length ([]:square list)]
+                @> esimp
+                @> [%use len_row 0 m]
+                @> auto; 
+            auto]; 
+            arith]; 
+          auto]]]
+[@@rw]
+
+lemma num_white_append xs ys =
+  num_white (xs @ ys) = num_white xs + num_white ys
+[@@by auto] [@@rw]
+
+lemma num_black_append xs ys =
+  num_black (xs @ ys) = num_black xs + num_black ys
+[@@by auto] [@@rw]
+
+let dim_8x8 = 7 (* 0 ... 7 *)
+let empty_board : state = []
+
+let board_covered = mk_board dim_8x8 dim_8x8
+
+let rec delete a xs =
+  match xs with
+  | [] -> []
+  | x::xs -> if x=a then xs else x :: delete a xs
+
+(* Let's see an instance of a covering. *)
+instance (fun acts -> 
+  match run dim_8x8 empty_board acts with
+  | Some covering -> 
+    List.length covering = 10
+  | None -> false)
+
+let mutilated_board =
+  delete {x=0;y=0} (delete {x=dim_8x8;y=dim_8x8} board_covered)
+
+lemma mutilated_color_count =
+  num_white mutilated_board
+  <> num_black mutilated_board
+[@@by auto]
+
+(* Finally, our main theorem: 
+   you can't cover a mutilated chessboard with dominos! *)
+
+theorem main acts =
+  match run dim_8x8 empty_board acts with
+  | Some covering ->
+    covering <> mutilated_board
+  | None -> true
+[@@by [%use run_color_count_from_empty empty_board dim_8x8 acts]
+   @> [%use mutilated_color_count]
+   @> auto]
+

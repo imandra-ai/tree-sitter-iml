@@ -1,0 +1,51 @@
+(* Correctness of a ripple-carry adder in ImandraX *)
+(* G.Passmore, Imandra *)
+
+let xor (x : bool) (y : bool) : bool = x <> y
+
+let adder_sum a b cin =
+  xor (xor a b) cin
+
+let adder_carry_out a b cin =
+  ((xor a b) && cin) || (a && b)
+
+(** The integer denoted by a single bit `a'. *)
+
+let val_bit (a : bool) =
+  if a then 1 else 0
+
+(** Composing full adders to sum vectors of bits. *)
+
+let rec ripple_carry_adder (a : bool list) (b : bool list) (cin : bool) : bool list =
+  match a, b with
+  | a1 :: a', b1 :: b' ->
+    adder_sum a1 b1 cin ::
+    ripple_carry_adder a' b' (adder_carry_out a1 b1 cin)
+  | _, _ ->
+    [cin]
+
+(** The integer denoted by a vector of bits `a'.
+    Least-significant bit comes first. *)
+
+let rec val_bits (a : bool list) =
+  match a with
+  | [] -> 0
+  | a1 :: a' -> val_bit a1 + val_bits a' * 2
+
+(** Checking that the ripple carry adder does compute the sum of its inputs. *)
+
+theorem full_ripple_carry_adder_correct a b cin =
+  List.length a = List.length b 
+  ==>
+  val_bits (ripple_carry_adder a b cin) =
+  val_bits a + val_bits b + val_bit cin
+[@@by auto]
+
+(* Nice lemma, though we don't need even it to prove the goal! *)
+
+(* Lemma: correctness of a single composable adder+carry component *)
+
+lemma single_adder_circuit_correct a b cin =
+  val_bit (adder_sum a b cin)
+    = val_bit a + val_bit b + val_bit cin - val_bit (adder_carry_out a b cin) * 2
+[@@rw]

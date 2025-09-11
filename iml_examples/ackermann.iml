@@ -1,0 +1,65 @@
+(* An ImandraX proof on the relationship between Ackermann's original function
+   and R. Peter's version of it (1935), in the style of Boyer.
+
+   G.Passmore, Imandra
+   * Done while 40,000 feet up, on a flight from ATL -> ATX!
+*)
+
+(* Ackermann's original function - we admit by a lexicographic measure of x,y *)
+
+let rec ack m n a =
+  if m <= 0 then n + a
+  else if n <= 0 then 0
+  else if n = 1 then a
+  else ack (m-1) (ack m (n-1) a) a
+[@@adm m,n]
+
+(* R. Peter's version *)
+
+let rec pet m n =
+  if m <= 0 then n + 1
+  else if n <= 0 then pet (m-1) 1
+  else pet (m-1) (pet m (n-1))
+[@@adm m,n]
+
+let rec int_induct m =
+  if m <= 0 then 0
+  else int_induct (m-1)
+
+lemma ack_2_2_4 m =
+  ack m 2 2 = 4
+[@@by induct ~on_fun:[%id int_induct] ()] [@@rw]
+
+lemma ack_psd m n a =
+  m >= 0 && n >= 0 && a >= 0 ==> (ack m n a) [@trigger] >= 0
+[@@by auto] [@@rw] [@@fc]
+
+lemma pet_psd m n =
+  m >= 0 && n >= 0 ==> (pet m n) [@trigger] >= 0
+[@@by auto] [@@rw] [@@fc]
+
+lemma force_zero n =
+  n <= 0 ==> ((0 <= n) = (n = 0))
+[@@rw]
+
+(* The main result *)
+
+theorem ack_pet m n =
+  pet 0 n = n + 1
+  && (0 < m && 0 <= n ==> pet m n + 3 = ack (m-1) (n+3) 2)
+[@@by auto]
+
+(* Now, for fun, let's do it manually! *)
+
+theorem ack_pet_manual m n =
+  pet 0 n = n + 1
+  && (0 < m && 0 <= n ==> pet m n + 3 = ack (m-1) (n+3) 2)
+[@@by induction ~id:[%id pet] ()
+   @>| [[%normalize pet 0 n] @> lift_ifs; 
+        [%simp_only pet_psd]; 
+        lift_ifs
+        @>| [[%simp_only ack, pet];
+             [%simp_only force_zero];
+             [%simp_only pet];
+             [%simp_only ack]]]
+]

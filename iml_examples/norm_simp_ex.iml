@@ -1,0 +1,105 @@
+(* Some examples with `[%simp ...]`, [%simp_only ...]` and `[%norm ...]` *)
+(* G.Passmore, Imandra *)
+
+lemma rev_append x y =
+  List.rev (x @ y) = List.rev y @ List.rev x
+[@@by auto]
+
+lemma rev_len x =
+  List.length (List.rev x) = List.length x
+[@@by auto] [@@rw]
+
+lemma len_append x y =
+  List.length (x @ y) = List.length x + List.length y
+[@@by auto] [@@rw]
+
+(* Need to be able to 'disable a rule at definition time'! *)
+lemma add_commutes x y =
+  x + y = y + x
+[@@by auto] [@@rw] [@@perm]
+
+let k x = x + 1 - 1
+
+lemma foo g h x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by [%simp rev_len, len_append]]
+
+lemma k_eq x = k x = x [@@rw]
+
+lemma foo g h x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by [%simp_only rev_len]
+   @> [%simp_only len_append, k]
+   ]
+
+lemma foo g h x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by [%simp_only len_append, k]
+   @> [%simp_only rev_len, len_append]]
+
+lemma foo g h x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by normalize ~rules:[[%id rev_len]] [%t List.length (List.rev (x @ y))]
+    @> [%simp_only k]
+    @> [%simp_only len_append]]
+
+let add x y = x + y
+
+lemma foo g h x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by  [%simp_only k]
+    @> [%simp_only len_append, add_commutes]
+    @> [%norm List.length (List.rev (List.append x y))]
+    @> trivial]
+
+lemma add_silly x y =
+  add x y = y + x
+[@@by [%simp_only add_commutes]
+   @> [%norm add x y]
+   @> trivial]
+
+let rec square_sum xs =
+  match xs with
+  | [] -> 0
+  | x::xs -> x*x + square_sum xs
+
+lemma square_psd x =
+  x * x >= 0
+
+lemma sum_non_neg x y =
+  x >= 0 && y >= 0
+  ==>
+  x + y >= 0
+[@@by auto] [@@rw]
+
+lemma square_sum_non_neg xs =
+  square_sum xs >= 0
+[@@by induction ()
+  @>| [[%norm square_sum xs] @> arith;
+       [%norm square_sum xs]
+        @> [%use square_psd (List.hd xs)]
+        @> [%simp_only sum_non_neg]]]
+
+let rec find_non_zero xs =
+  match xs with
+  | [] -> None
+  | x::xs -> if x<>0 then Some x else find_non_zero xs
+
+lemma zero_squeeze n =
+  n >= 0
+  ==>
+  (n <= 0) = (n = 0)
+[@@by auto] [@@rw]
+
+lemma square_sum_pos_has_pos xs =
+  square_sum xs > 0
+  ==>
+  find_non_zero xs <> None
+[@@by induction ~id:[%id find_non_zero] ()
+   @>| [[%simp_only find_non_zero, square_sum];
+       [%norm square_sum xs]
+        @> lift_ifs
+        @>| [[%replace List.hd xs] 
+             @> esimp @> [%expand find_non_zero xs] @> lift_ifs;
+             [%use square_sum_non_neg (List.tl xs)]
+             @> [%simp_only zero_squeeze]]]]

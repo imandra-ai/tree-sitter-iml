@@ -1,0 +1,46 @@
+(* A proof of the (arbitrary-length!) Pigeon Hole Principle in ImandraX *)
+(* G.Passmore, Imandra *)
+
+(* n pigeon holes are represented by an int list of length n *)
+
+let rec sum_holes = function
+  | [] -> 0
+  | x :: xs -> x + sum_holes xs
+
+let num_holes = List.length
+
+let rec max_1_per_hole = function
+  | [] -> true
+  | x :: xs -> (x = 0 || x = 1)
+               && max_1_per_hole xs
+
+(* Not necessary, but nice! *)
+
+lemma len_leq_z l =
+  (List.length l <= 0) = (l = [])
+[@@by auto] [@@rw]
+
+(* Key inductive lemma - a nice generalization! *)
+
+lemma key l n =
+  0 < num_holes l && num_holes l < sum_holes l
+  ==> not (max_1_per_hole l)
+[@@by auto]
+
+(* Our main theorem: PHP for any n! *)
+
+theorem php l n =
+  0 < n && num_holes l = n && sum_holes l = n + 1
+  ==>
+  not (max_1_per_hole l)
+[@@by [%use key l n] @> auto]
+
+(* Now, if we want to show PHP for some astronomical number
+   of holes, it's easy! Contrast this with SAT/resolution :-) *)
+
+lemma php_for_1000000000000000000000000000 l =
+  num_holes l = 1000000000000000000000000000
+  && sum_holes l = 1000000000000000000000000001
+  ==>
+  not (max_1_per_hole l)
+[@@by [%use php l 1000000000000000000000000000] @> auto]

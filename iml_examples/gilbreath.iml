@@ -1,0 +1,102 @@
+(* Proof of the `correctness` of the famous Gilbreath Card Trick in ImandraX
+
+   In the words of J Moore and Bob Boyer:
+
+   ```
+   Suppose you have a deck of cards of even length. Suppose the cards alternate
+   between red ones and black ones. Cut the deck into two piles, a and b.
+   Shuffle a and b together. Then the following is true of the shuffled deck. If
+   the bottom-most cards in a and b are of different color, then when the cards
+   of the shuffled deck are taken from the top in adjacent pairs, each pair
+   contains a card of each color. On the other hand, if the bottom-most cards in
+   a and b are the same color, the above pairing property holds after rotating
+   the shuffled deck by one card, i.e., moving the bottom card to the top.
+   ```
+
+  History: de Bruijn taught Huet this trick, Huet taught Moore, Moore taught
+   Boyer, and Boyer taught Passmore.
+
+  G.Passmore, Imandra
+ *)
+
+ type color = Red | Black
+
+ type deck = color list
+ 
+ let opposite_color (x : color) (y : color) = x <> y
+ 
+ let rec alternating_colors (x : deck) =
+   match x with
+   | [] | [_] -> true
+   | x :: ((y :: _) as tl) ->
+     opposite_color x y
+     && alternating_colors tl
+ 
+ let rec paired_colors (x : deck) =
+   match x with
+   | [] | [_] -> true
+   | x :: y :: rst ->
+     opposite_color x y
+     && paired_colors rst
+ 
+ (** Is z a valid shuffle of the piles x and y? *)
+ let rec valid_shuffle (x : deck) (y : deck) (z : deck) : bool =
+   match x, y, z with
+   | [], [], [] -> true
+   | [], y, z -> y = z
+   | x, [], z -> x = z
+   | x1 :: xs, y1 :: ys, z1 :: zs ->
+     (x1 = z1 && valid_shuffle xs y zs)
+     || (y1 = z1 && valid_shuffle x ys zs)
+   | _ -> false
+ [@@adm x,y]
+ 
+ (* We can ask Imandra to show us some valid shuffles! *)
+ 
+instance (fun x y z -> List.length z >= 5 && valid_shuffle x y z)
+ 
+instance (fun x y z -> List.length z >= 10 && List.length x >= 5 && List.length y >= 3 && valid_shuffle x y z)
+ 
+ let rec even_length x = match x with
+   | []  -> true
+   | [_] -> false
+   | _ :: _ :: xs -> even_length xs
+ 
+ theorem alt_is_paired (x : deck) =
+   alternating_colors x ==> paired_colors x
+ [@@by induct ~on_fun:[%id paired_colors] ()] [@@rewrite]
+ 
+ (* A function giving us a useful induction scheme! *)
+ 
+ let rec wild_induct (x : deck) (y : deck) (z : deck) =
+   if z = [] || List.tl z = [] then 1
+   else
+     let tl x = if x = [] then [] else List.tl x in
+     wild_induct (tl @@ tl x) y (List.tl (List.tl z))
+     + wild_induct (tl x) (tl y) (List.tl (List.tl z))
+     + wild_induct x (tl @@ tl y) (List.tl (List.tl z))
+[@@adm z]
+ 
+ (* Beautiful lemmas that we prove by induction following valid_shuffle! *)
+ 
+ theorem f2 x y =
+  valid_shuffle x y (List.append x y)
+[@@by auto] [@@rw]
+ 
+ theorem f3 x y =
+  valid_shuffle x y (List.append y x)
+[@@by auto] [@@rw]
+ 
+ (* Main theorem - we now prove this automatically! *)
+
+ theorem main x y z =
+  valid_shuffle x y z
+   && alternating_colors x
+   && alternating_colors y
+   && x <> []
+   && y <> []
+   && opposite_color (List.hd x) (List.hd y)
+  ==>
+  paired_colors z
+[@@by induct ~on_fun:[%id wild_induct] ()] [@@timeout 120]
+ 

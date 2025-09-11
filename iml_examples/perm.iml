@@ -1,0 +1,165 @@
+(* Permutations via bags in ImandraX *)
+(* G.Passmore, Imandra *)
+
+[@@@import "bags.iml"]
+
+let perm x y =
+  Bags.subbag x y && Bags.subbag y x
+
+lemma mem_occur a x =
+  List.mem a x = (Bags.num_occurs a x > 0)
+[@@by auto] [@@rw]
+
+lemma perm_count_id a x y =
+  perm x y
+  ==>
+  Bags.num_occurs a x = Bags.num_occurs a y
+[@@by auto] [@@fc]
+
+(* Find a witness to x *not* being a subbag of y *)
+let rec badguy x y =
+  match x with
+  | [] -> None
+  | x::xs ->
+    if List.mem x y then
+      badguy xs (Bags.delete x y)
+    else 
+      Some x
+
+(* If we make `simplify` do replace first for all explicit equations,
+   then we'll get this with `simplify ()` in the second place, not just
+   `auto`! Let's try to make this fast (it's currently over 2 seconds)! *)
+
+lemma subbag_choice x y =
+  Bags.subbag x y
+  = (match badguy x y with
+     | Some w -> Bags.num_occurs w y >= Bags.num_occurs w x
+     | None -> true)
+[@@by induction ()
+   @>| [auto; 
+        auto]]
+
+lemma badguy_empty x y =
+  badguy x y = None
+  ==>
+  Bags.subbag x y
+[@@by [%use subbag_choice x y] @> auto] [@@rw]
+
+lemma occur_append a x y =
+  Bags.num_occurs a (x @ y) 
+   = Bags.num_occurs a x + Bags.num_occurs a y
+[@@by auto] [@@rw]
+
+lemma subbag_append x y =
+  Bags.subbag (x @ y) (y @ x)
+[@@by [%use subbag_choice (x @ y) (y @ x)]
+   @> auto] [@@rw]
+
+lemma pa_l x y =
+  Bags.subbag x (x @ y)
+[@@by auto] [@@rw]
+
+lemma perm_append x y =
+  perm (x @ y) (y @ x)
+[@@by auto] [@@rw]
+
+lemma subbag_necc a x y =
+  (Bags.subbag x y) [@trigger 0]
+  ==>
+  (Bags.num_occurs a x) [@trigger 0] <= Bags.num_occurs a y
+[@@by auto]
+
+let subbag_necc_fun a x y =
+  (Bags.subbag x y)
+  ==>
+  (Bags.num_occurs a x) <= Bags.num_occurs a y
+
+lemma subbag_necc_lift b x y =
+  match b with
+  | Some a -> subbag_necc_fun a x y
+  | None -> true
+[@@by auto]
+
+lemma key a x y z =
+  let open Bags in
+  match a with
+  | Some a ->
+    num_occurs a x <= num_occurs a y
+    && num_occurs a y <= num_occurs a z
+    ==>
+    num_occurs a x <= num_occurs a z
+  | None -> true
+[@@by auto]
+
+lemma subbag_trans x y z =
+  (Bags.subbag x y) [@trigger rw] && (Bags.subbag y z) [@trigger rw]
+  ==>
+  Bags.subbag x z
+[@@by [%use subbag_necc_lift (badguy x z) x y]
+   @> [%use subbag_necc_lift (badguy x z) y z]
+   @> [%use subbag_necc_lift (badguy x z) x z]
+   @> [%use subbag_choice x y]
+   @> [%use subbag_choice y z]
+   @> [%use subbag_choice x z]
+   @> unroll 0] [@@rw] [@@disable Bags.del_non_member]
+
+lemma perm_transitive x y z =
+  (perm x y [@trigger rw]) && (perm y z) [@trigger rw]
+  ==>
+  (perm x z) [@trigger rw]
+[@@by auto] [@@rw]
+
+lemma num_occurs_perm a x y =
+  perm x y
+  ==>
+  Bags.num_occurs a x = Bags.num_occurs a y
+[@@by [%use subbag_necc a x y]
+   @> [%use subbag_necc a y x]
+   @> auto]
+[@@fc]
+
+(* Some simple tests of our rules! *)
+
+lemma perm_arith_test_1 a b x y i =
+  perm x y
+  && Bags.num_occurs a x = i
+  ==>
+  Bags.num_occurs a (x @ y) = 2*i
+[@@by auto] [@@disable perm]
+
+lemma perm_arith_test_2 a b x y i =
+  perm x y
+  && Bags.num_occurs a y = i
+  ==>
+  Bags.num_occurs a (x @ y) = 2*i
+[@@by auto] [@@disable perm]
+
+lemma perm_arith_test_3 a b x y i =
+  perm x y
+  && Bags.num_occurs a y = i
+  && i > 0
+  ==>
+  Bags.num_occurs a (Bags.delete a (x @ y)) = 2*i - 1
+[@@by auto] [@@disable perm]
+
+lemma perm_test_mem_1 a x y =
+  Bags.subbag x y
+  && List.mem a x
+  ==>
+  List.mem a y
+[@@by auto]
+
+lemma perm_test_mem_2 a x y =
+  perm x y
+  && List.mem a x
+  ==>
+  List.mem a y
+[@@by auto]
+
+lemma perm_test_mem_3 a x y z =
+  perm x y
+  && perm y z
+  && Bags.num_occurs a x > 1
+  ==>
+  List.mem a (Bags.delete a y)
+[@@by auto]

@@ -1,0 +1,179 @@
+(* A useful library about bags (multisets) encoded as lists in ImandraX, Bevier style. *)
+(* G.Passmore, Imandra *)
+
+let rec delete a xs =
+  match xs with
+  | [] -> []
+  | x::xs ->
+    if x=a then xs
+    else x::delete a xs
+
+(* xs \ ys -- note this is not symmetric diff! *)
+let rec diff xs ys =
+  match ys with
+  | y::ys ->
+    if List.mem y xs then
+    diff (delete y xs) ys
+    else diff xs ys
+  | [] -> xs
+[@@adm ys]
+
+(* Example: [1;2;3;3] \ [2;3;4] = [1;2] *)
+eval diff [1;2;2;3] [2;3;5]
+
+let rec inter xs ys =
+  match xs with
+  | x::xs ->
+    if List.mem x ys then (
+      x::inter xs (delete x ys)
+    ) else (
+      inter xs ys
+    )
+  | [] -> []
+
+(* Example: [1;2;3;2;4;5] ∩ [2;2;3;5] = [2;3;2;5] *)
+eval inter [1;2;3;2;4;5] [2;2;3;5]
+
+let rec num_occurs a xs =
+  match xs with
+  | [] -> 0
+  | x::xs ->
+    if x=a then 1 + num_occurs a xs
+    else num_occurs a xs
+
+let rec subbag xs ys =
+  match xs with
+  | [] -> true
+  | x::xs ->
+    List.mem x ys
+    && subbag xs (delete x ys)
+
+lemma delete_nonempty x l =
+  (delete x l <> [])
+  = (match l with 
+     | [] -> false 
+     | b::bs -> (x=b ==> bs <> []))
+[@@by auto] [@@rw]
+
+lemma del_non_member x y =
+  not (List.mem x y)
+  ==>
+  delete x y = y
+[@@by auto] [@@rw]
+
+lemma del_del x y z =
+  delete y (delete x z)
+  = delete x (delete y z)
+[@@by auto] [@@rw] [@@perm]
+
+lemma num_occurs_psd a x =
+  num_occurs a x >= 0
+[@@by auto] [@@fc]
+
+lemma eq_num_occurs_zero x l =
+  (num_occurs x l = 0)
+  = (not (List.mem x l))
+[@@by auto] [@@rw]
+
+lemma mem_nil x l =
+  l = [] ==> not (List.mem x l)
+[@@by auto] [@@rw]
+
+lemma mem_del x y l =
+  List.mem x (delete y l)
+  = (if List.mem x l then 
+     (x=y ==> num_occurs x l > 1)
+     else false)
+[@@by auto] [@@rw]
+
+lemma mem_del_implies_mem x y l =
+  List.mem x (delete y l)
+  ==>
+  List.mem x l
+[@@by auto] [@@fc]
+
+lemma occurs_del x y l =
+  num_occurs x (delete y l)
+  = (if x=y then
+       if List.mem x l then
+         num_occurs x l - 1
+       else 0
+    else num_occurs x l
+  )
+[@@by auto] [@@rw]
+
+lemma mem_diff x a b =
+  (List.mem x (diff a b))
+  = (num_occurs x b < num_occurs x a)
+[@@by auto] [@@rw]
+
+lemma diff_del e x y =
+  diff (delete e x) y
+  = delete e (diff x y)
+[@@by auto] [@@rw]
+
+lemma subbag_del x y u =
+  subbag x (delete u y)
+  ==>
+  subbag x y
+[@@by auto] [@@fc]
+
+lemma subbag_tl_1 x y =
+  match x with
+  | [] -> true
+  | _::tl ->
+    subbag x y
+    ==>
+    subbag tl y
+[@@by auto] [@@rw]
+
+lemma subbag_tl_2 x y =
+  match y with
+  | [] -> true
+  | _::tl ->
+    subbag x tl
+    ==>
+    subbag x y
+[@@by auto] [@@rw]
+
+lemma subbag_inter_1 x y =
+  subbag (inter x y) x
+[@@by auto] [@@rw]
+
+lemma subbag_inter_2 x y =
+  subbag (inter x y) y
+[@@by auto] [@@rw]
+
+lemma mem_inter x a b =
+  (List.mem x (inter a b))
+  = (List.mem x a && List.mem x b)
+[@@by auto] [@@rw]
+
+lemma occurs_inter x a b =
+  num_occurs x (inter a b)
+  = (if num_occurs x a < num_occurs x b then
+     num_occurs x a
+     else num_occurs x b)
+[@@by auto] [@@rw]
+
+lemma occurs_diff x a b =
+  let relu x = if x < 0 then 0 else x in
+  num_occurs x (diff a b)
+  = relu @@ num_occurs x a - num_occurs x b
+[@@by auto] [@@rw]
+
+lemma mem_subbag_push a x y =
+  List.mem a x && (subbag x y) [@trigger rw]
+  ==>
+  List.mem a y
+[@@by auto] [@@rw]
+
+lemma subbag_occurs_bound a x y =
+  subbag x y
+  ==>
+  num_occurs a y >= num_occurs a x
+[@@by auto] [@@fc]
+
+lemma occurs_append a x y =
+  num_occurs a (x @ y) = num_occurs a x + num_occurs a y
+[@@by auto] [@@rw]

@@ -1,0 +1,36 @@
+(* Some simple theorems about summations in ImandraX*)
+(* G.Passmore, Imandra *)
+
+let rec sum7 n =
+  if n <= 0 then 0
+  else
+   sum7 (n-1) + (4 * n - 1)
+
+lemma key n = n >= 0 ==> sum7 n = n * (2*n + 1) [@@by auto]
+
+let rec sum1 n =
+  if n <= 0 then 0
+  else n + sum1 (n-1)
+
+lemma sum1_thm n =
+  n >= 0
+  ==>
+  sum1 n = (n * (n + 1)) / 2
+[@@by auto]
+[@@rw]
+
+let rec sum5 n =
+  if n <= 0 then 0
+  else (n * n * n) + sum5 (n-1)
+
+lemma sum5_thm n =
+  n >= 0
+  ==>
+  sum5 n = (n * n * (n + 1) * (n + 1)) / 4
+[@@by auto]
+[@@rewrite]
+
+lemma f1 n =
+ (n * (1 + n)) / 2 * (n * (1 + n)) / 2 =
+ (n + n * n) / 2 * (n + n * n) / 2
+[@@by auto]
