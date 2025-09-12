@@ -12,6 +12,8 @@ from iml_query import fmt_node, get_node_lines, get_parser
 from iml_query.query import (
     axiom_query,
     decomp_query,
+    import_as_query,
+    import_query,
     instance_node_to_req,
     instance_query,
     lemma_query,
@@ -34,7 +36,9 @@ eg = eg_path.read_text()
 
 parser = get_parser(ocaml=False)
 # captures = run_query(verify_query, eg)
-captures = run_query(instance_query, eg)
+# captures = run_query(instance_query, eg)
+# captures = run_query(import_query, eg)
+captures = run_query(import_as_query, eg)
 # captures = run_query(theorem_query, eg)
 
 
@@ -45,11 +49,11 @@ for query_name, nodes in captures.items():
         node_s = '\n'.join(get_node_lines(node))
         print(escape(f'{i}.'))
         print('node:')
-        print(indent(node_s, '  '))
+        print(escape(indent(node_s, '  ')))
         if node.text:
             print()
             print('text:')
-            print(indent(node.text.decode('utf-8'), '  '))
+            print(escape(indent(node.text.decode('utf-8'), '  ')))
         print()
         match node.type:
             case 'verify_statement':

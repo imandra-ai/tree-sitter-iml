@@ -1,5 +1,6 @@
 (* Simple IML example with functions, axiom, and theorem *)
-[@@@import "core.iml"]
+[@@@import Core]
+[@@@import Six_swiss, "./code-logician-examples/six_swiss.iml"]
 
 let add_one (x: int) : int = x + 1
 [@@decomp top ()]

@@ -48,19 +48,51 @@ OPAQUE_QUERY_SRC = r"""
 ) @full_def
 """
 
+IMPORT_QUERY_SRC = r"""
+(floating_attribute
+    "[@@@"
+    (attribute_id) @attribute_id
+    (#eq? @attribute_id "import")
+    (attribute_payload
+        (expression_item
+            (constructor_path
+                (constructor_name) @import_name
+            )
+        )
+    )
+) @import
+"""
+
+
+IMPORT_AS_QUERY_SRC = r"""
+(floating_attribute
+    "[@@@"
+    (attribute_id) @attribute_id
+    (#eq? @attribute_id "import")
+    (attribute_payload
+        (expression_item
+            (tuple_expression
+                (constructor_path
+                    (constructor_name) @import_name
+                )
+                (string
+                    (string_content) @import_path
+                )
+            )
+        )
+    )
+) @import_as
+"""
+
 verify_query = Query(iml_language, VERIFY_QUERY_SRC)
-
 instance_query = Query(iml_language, INSTANCE_QUERY_SRC)
-
 axiom_query = Query(iml_language, AXIOM_QUERY_SRC)
-
 theorem_query = Query(iml_language, THEOREM_QUERY_SRC)
-
 lemma_query = Query(iml_language, LEMMA_QUERY_SRC)
-
 decomp_query = Query(iml_language, DECOMP_QUERY_SRC)
-
 opaque_query = Query(iml_language, OPAQUE_QUERY_SRC)
+import_query = Query(iml_language, IMPORT_QUERY_SRC)
+import_as_query = Query(iml_language, IMPORT_AS_QUERY_SRC)
 
 
 def mk_query(query_src: str) -> Query:
