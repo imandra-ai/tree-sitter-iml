@@ -30,7 +30,7 @@ dev = [
 
 
 [tool.ruff]
-line-length = 88
+line-length = 80
 fix = true
 show-fixes = true
 src = ["src"]
@@ -77,11 +77,12 @@ isort.combine-as-imports = true
 quote-style = "single"
 
 [tool.ty]
-environment.python = ".venv"
+environment.python = "../.venv"
 
 [tool.pyright]
 venvPath = ".."
 venv = ".venv"
+pythonVersion = "3.13"
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 reportUnnecessaryIsInstance = false
