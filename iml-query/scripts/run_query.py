@@ -8,8 +8,8 @@ from rich import print
 from rich.markup import escape
 from tree_sitter import Language, Node, Parser, Point, Query, QueryCursor
 
-from use_parser import get_parser, get_tree_lines
-from use_parser.utils import find_pyproject_dir
+from iml_query import get_parser, get_tree_lines
+from iml_query.utils import find_pyproject_dir
 
 root_dir = find_pyproject_dir(Path(__file__), 2)
 

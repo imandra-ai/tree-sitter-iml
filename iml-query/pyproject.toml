@@ -1,5 +1,5 @@
 [project]
-name = "use-parser"
+name = "iml-query"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"

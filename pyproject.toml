@@ -30,5 +30,5 @@ build-frontend = "build"
 
 [tool.uv.workspace]
 members = [
-    "use-parser",
+    "iml-query",
 ]
