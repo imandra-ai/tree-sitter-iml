@@ -39,19 +39,27 @@ instance_query_src = r"""
 (instance_statement) @instance
 """
 
-decomp_query_src = r"""
+attribute_query_src = r"""
 (value_definition
     (let_binding
         (value_name) @func_name
+        (item_attribute
+            (attribute_id) @attribute_id
+            (#eq? @attribute_id "{attribute_id}")
+        ) @item_attr
     )
-) @full
+) @full_def
 """
+
+decomp_query_src = attribute_query_src.format(attribute_id='decomp')
+opaque_query_src = attribute_query_src.format(attribute_id='opaque')
 
 query_src = rf"""
 {verify_query_src}
 {instance_query_src}
 """
 query_src = decomp_query_src
+query_src = opaque_query_src
 query = Query(language, query_src)
 cursor = QueryCursor(query=query)
 captures = cursor.captures(tree.root_node)
