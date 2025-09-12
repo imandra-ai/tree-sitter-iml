@@ -42,3 +42,6 @@ __pycache__
 # Test files
 /test.ml
 /test.mli
+
+
+*.tree
