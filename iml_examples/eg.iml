@@ -5,6 +5,9 @@ let add_one (x: int) : int = x + 1
 
 let double (x: int) : int = x * 2
 
+let square : int -> int = ()
+[@@opaque]
+
 axiom positive_addition x =
   x >= 0 ==> add_one x > x
 
