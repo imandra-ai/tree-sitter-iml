@@ -36,6 +36,10 @@ DECOMP_QUERY_SRC = r"""
 ) @full_def
 """
 
+EVAL_QUERY_SRC = r"""
+(eval_statement) @eval
+"""
+
 OPAQUE_QUERY_SRC = r"""
 (value_definition
     (let_binding
@@ -48,23 +52,15 @@ OPAQUE_QUERY_SRC = r"""
 ) @full_def
 """
 
+# [@@@import Mod_name, "path/to/file.iml"] (path import with explicit module name)
+# [@@@import Mod_name, "path/to/file.iml", Mod_name2] (same, with explicit extraction name)
+# [@@@import "path/to/file.iml"] (path import as module `File`)
+# [@@@import Mod_name, "findlib:foo.bar"] (import from ocamlfind library)
+# [@@@import Mod_name, "findlib:foo.bar", Mod_name2] (same, with explicit extraction name)
+# [@@@import Mod_name, "dune:foo.bar"] (import from dune library)
+# [@@@import Mod_name, "dune:foo.bar", Mod_name2] (same, with explicit extraction name)
+
 IMPORT_QUERY_SRC = r"""
-(floating_attribute
-    "[@@@"
-    (attribute_id) @attribute_id
-    (#eq? @attribute_id "import")
-    (attribute_payload
-        (expression_item
-            (constructor_path
-                (constructor_name) @import_name
-            )
-        )
-    )
-) @import
-"""
-
-
-IMPORT_AS_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
     (attribute_id) @attribute_id
@@ -81,7 +77,7 @@ IMPORT_AS_QUERY_SRC = r"""
             )
         )
     )
-) @import_as
+) @import
 """
 
 verify_query = Query(iml_language, VERIFY_QUERY_SRC)
@@ -90,9 +86,9 @@ axiom_query = Query(iml_language, AXIOM_QUERY_SRC)
 theorem_query = Query(iml_language, THEOREM_QUERY_SRC)
 lemma_query = Query(iml_language, LEMMA_QUERY_SRC)
 decomp_query = Query(iml_language, DECOMP_QUERY_SRC)
+eval_query = Query(iml_language, EVAL_QUERY_SRC)
 opaque_query = Query(iml_language, OPAQUE_QUERY_SRC)
 import_query = Query(iml_language, IMPORT_QUERY_SRC)
-import_as_query = Query(iml_language, IMPORT_AS_QUERY_SRC)
 
 
 def mk_query(query_src: str) -> Query:
@@ -139,3 +135,14 @@ def instance_node_to_req(node: Node) -> dict[str, str]:
         instance_src = instance_src[1:-1].strip()
     req['instance_src'] = instance_src
     return req
+
+
+def eval_node_to_src(node: Node) -> str:
+    """Extract str from an eval statement node."""
+    assert node.type == 'eval_statement', 'not eval_statement'
+    assert node.text, 'None text'
+    src = node.text.decode('utf-8').strip().removeprefix('eval').strip()
+    # Remove parentheses
+    if src.startswith('(') and src.endswith(')'):
+        src = src[1:-1].strip()
+    return src

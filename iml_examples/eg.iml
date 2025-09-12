@@ -1,6 +1,6 @@
 (* Simple IML example with functions, axiom, and theorem *)
-[@@@import Core]
-[@@@import Six_swiss, "./code-logician-examples/six_swiss.iml"]
+[@@@import "./code-logician-examples/six_swiss.iml"]
+(* [@@@import Six_swiss, "./code-logician-examples/six_swiss.iml"] *)
 
 let add_one (x: int) : int = x + 1
 [@@decomp top ()]
@@ -24,3 +24,8 @@ let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
 verify double_non_negative_is_increasing
 
 instance (fun x -> x >= 0 ==> not (double x > x))
+
+
+let two_x = (let x = 1 in double x)
+
+eval (double 2)

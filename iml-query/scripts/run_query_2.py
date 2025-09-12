@@ -12,7 +12,8 @@ from iml_query import fmt_node, get_node_lines, get_parser
 from iml_query.query import (
     axiom_query,
     decomp_query,
-    import_as_query,
+    eval_node_to_src,
+    eval_query,
     import_query,
     instance_node_to_req,
     instance_query,
@@ -36,10 +37,13 @@ eg = eg_path.read_text()
 
 parser = get_parser(ocaml=False)
 # captures = run_query(verify_query, eg)
+# captures = run_query(opaque_query, eg)
 # captures = run_query(instance_query, eg)
 # captures = run_query(import_query, eg)
-captures = run_query(import_as_query, eg)
+captures = run_query(decomp_query, eg)
+# captures = run_query(import_query, eg)
 # captures = run_query(theorem_query, eg)
+captures = run_query(eval_query, eg)
 
 
 for query_name, nodes in captures.items():
@@ -48,8 +52,8 @@ for query_name, nodes in captures.items():
         # print(escape(f'{i}. {fmt_node(node)}'))
         node_s = '\n'.join(get_node_lines(node))
         print(escape(f'{i}.'))
-        print('node:')
-        print(escape(indent(node_s, '  ')))
+        # print('node:')
+        # print(escape(indent(node_s, '  ')))
         if node.text:
             print()
             print('text:')
@@ -58,12 +62,17 @@ for query_name, nodes in captures.items():
         match node.type:
             case 'verify_statement':
                 req = verify_node_to_req(node)
+                print('imandrax-api Req:')
+                pprint(req)
             case 'instance_statement':
                 req = instance_node_to_req(node)
+                print('imandrax-api Req:')
+                pprint(req)
+            case 'eval_statement':
+                src = eval_node_to_src(node)
+                print('eval src:')
+                print(escape(indent(src, '  ')))
             case _:
-                req = None
+                pass
 
-        if req is not None:
-            print('imandrax-api Req:')
-            pprint(req)
         # breakpoint()
