@@ -79,6 +79,10 @@ quote-style = "single"
 [tool.ty]
 environment.python = "../.venv"
 
+[tool.ty.rules]
+# Handled by pyright
+possibly-unbound-attribute = "ignore"
+
 [tool.pyright]
 venvPath = ".."
 venv = ".venv"
@@ -87,4 +91,4 @@ typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 reportUnnecessaryIsInstance = false
 reportUnnecessaryTypeIgnoreComment = true
-reportUnusedImport = "warning"
+reportUnusedImport = "none"

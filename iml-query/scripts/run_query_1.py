@@ -8,7 +8,15 @@ from rich import print
 from rich.markup import escape
 from tree_sitter import Language, Node, Parser, Point, Query, QueryCursor
 
-from iml_query import get_parser, get_tree_lines
+from iml_query import get_node_lines, get_parser
+from iml_query.query import (
+    decomp_query,
+    instance_query,
+    mk_query,
+    opaque_query,
+    run_query,
+    verify_query,
+)
 from iml_query.utils import find_pyproject_dir
 
 root_dir = find_pyproject_dir(Path(__file__), 2)
@@ -18,6 +26,12 @@ eg_path = root_dir / 'iml_examples' / 'eg.iml'
 
 eg = eg_path.read_text()
 
+
+query_output = run_query(verify_query, eg)
+print(query_output)
+
+print('=' * 20)
+
 parser = get_parser(ocaml=False)
 language = parser.language
 assert language
@@ -26,11 +40,10 @@ tree = parser.parse(bytes(eg, 'utf-8'))
 
 # print(tree.root_node.children[-1].text)
 
-tree_s = '\n'.join(get_tree_lines(tree))
+tree_s = '\n'.join(get_node_lines(tree))
 # print(escape(tree_s))
 
 
-# The correct query pattern needs a capture name (@name)
 verify_query_src = r"""
 (verify_statement) @verify
 """

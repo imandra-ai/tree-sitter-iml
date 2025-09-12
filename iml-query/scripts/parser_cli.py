@@ -78,7 +78,9 @@ def parse_file(file_path, max_depth=None, use_iml=False):
     if errors:
         logger.info(f'\nFound {len(errors)} parse errors:')
         for i, error in enumerate(errors):
-            error_text = error.text.decode('utf-8') if error.text else 'Unknown error'
+            error_text = (
+                error.text.decode('utf-8') if error.text else 'Unknown error'
+            )
             # Truncate long error messages
             if len(error_text) > 100:
                 error_text = error_text[:100] + '...'
@@ -98,7 +100,7 @@ def main():
     parser.add_argument(
         'file',
         nargs='?',
-        default='../iml_examples/code-logician-examples/six_swiss.iml',
+        default='./iml_examples/code-logician-examples/six_swiss.iml',
         help='Path to the OCaml/IML file to parse (default: six_swiss.iml example)',
     )
 
@@ -107,7 +109,9 @@ def main():
     )
 
     parser.add_argument(
-        '--iml', action='store_true', help='Use IML parser instead of OCaml parser'
+        '--iml',
+        action='store_true',
+        help='Use IML parser instead of OCaml parser',
     )
 
     args = parser.parse_args()

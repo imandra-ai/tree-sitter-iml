@@ -68,12 +68,18 @@ def parse_with_parser(code, use_iml=False, max_depth=None):
     error_info = []
     if errors:
         for i, error in enumerate(errors):
-            error_text = error.text.decode('utf-8') if error.text else 'Unknown error'
+            error_text = (
+                error.text.decode('utf-8') if error.text else 'Unknown error'
+            )
             if len(error_text) > 100:
                 error_text = error_text[:100] + '...'
             error_info.append(f'Error {i + 1}: {error_text}')
 
-    return {'tree': tree_lines, 'errors': error_info, 'error_count': len(errors)}
+    return {
+        'tree': tree_lines,
+        'errors': error_info,
+        'error_count': len(errors),
+    }
 
 
 def _get_comparison_summary(ocaml_errors, iml_errors):
@@ -102,7 +108,9 @@ def _write_tree_files(file_path, ocaml_result, iml_result, max_depth):
     depth_suffix = f'.depth{max_depth}' if max_depth is not None else ''
 
     # Write OCaml tree
-    ocaml_output = file_path.parent / f'{file_path.stem}.ocaml{depth_suffix}.tree'
+    ocaml_output = (
+        file_path.parent / f'{file_path.stem}.ocaml{depth_suffix}.tree'
+    )
     with ocaml_output.open('w', encoding='utf-8') as f:
         f.write('\n'.join(ocaml_result['tree']))
         if ocaml_result['errors']:
@@ -170,7 +178,9 @@ def compare_file_parsing(file_path, max_depth=None, write_files=False):
 
     # Write results
     if write_files:
-        summary = _write_tree_files(file_path, ocaml_result, iml_result, max_depth)
+        summary = _write_tree_files(
+            file_path, ocaml_result, iml_result, max_depth
+        )
         logger.info(f'Analysis complete for {file_path.name}: {summary}')
     else:
         _log_console_results(file_path, ocaml_result, iml_result)
@@ -184,7 +194,7 @@ def main():
 
     parser.add_argument(
         '--examples-dir',
-        default='../iml_examples',
+        default='./iml_examples',
         help='Path to the examples directory (default: ../iml_examples)',
     )
 
@@ -193,7 +203,9 @@ def main():
     )
 
     parser.add_argument(
-        '--pattern', default='*.iml', help='File pattern to match (default: *.iml)'
+        '--pattern',
+        default='*.iml',
+        help='File pattern to match (default: *.iml)',
     )
 
     parser.add_argument(
@@ -236,7 +248,9 @@ def _process_files(example_files, max_depth, write_files):
 
     # Compare parsing for each file
     for file_path in sorted(example_files):
-        compare_file_parsing(file_path, max_depth=max_depth, write_files=write_files)
+        compare_file_parsing(
+            file_path, max_depth=max_depth, write_files=write_files
+        )
 
     completion_msg = f'Analysis complete for {len(example_files)} files'
     logger.info(completion_msg)
