@@ -13,14 +13,30 @@ def mk_query(query_src: str) -> Query:
     return Query(iml_language, query_src)
 
 
-def run_query(query: Query, code: str | bytes) -> dict[str, list[Node]]:
-    """Run a Tree-sitter query on the given code."""
+def run_query(
+    query: Query,
+    code: str | bytes,
+) -> list[tuple[int, dict[str, list[Node]]]]:
+    """Run a Tree-sitter query on the given code.
+
+    Return:
+        A list of tuples where the first element is the pattern index and
+        the second element is a dictionary that maps capture names to nodes.
+
+    """
     if isinstance(code, str):
         code = bytes(code, 'utf8')
+
     parser = get_parser(ocaml=False)
     tree = parser.parse(code)
     cursor = QueryCursor(query=query)
-    return cursor.captures(tree.root_node)
+    # return cursor.captures(tree.root_node)
+    return cursor.matches(tree.root_node)
+
+
+def group_captures(captures: dict[str, list[Node]]) -> dict[str, list[Node]]:
+    """Group captures by their names."""
+    return {name: nodes for name, nodes in captures.items() if name}
 
 
 # =====
@@ -156,10 +172,19 @@ def eval_node_to_src(node: Node) -> str:
     return src
 
 
-def decomp_node_to_req(node: Node) -> dict[str, str]:
-    """Extract ImandraX request from a decomposition statement node."""
-    assert node.type == 'value_definition', 'need to be a function definition'
+def decomp_capture_to_req(capture: dict[str, list[Node]]) -> dict[str, str]:
+    """Extract ImandraX request from a decomp capture."""
     req: dict[str, str] = {}
-    logger.log(node.children)
 
+    # Function name
+    func_name = capture['func_name'][0].text
+    assert func_name, 'No function name'
+    req['func_name'] = func_name.decode('utf-8')
+
+    # Decomp
+    decomp_payload = capture['attribute_payload'][0].text
+    assert decomp_payload, 'No decomp payload'
+    req['decomp_payload'] = decomp_payload.decode('utf-8')
+
+    req = req
     return req

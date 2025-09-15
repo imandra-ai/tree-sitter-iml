@@ -20,12 +20,19 @@ def get_parser(ocaml: bool = False) -> Parser:
     return parser
 
 
-def get_node_lines(
+def get_node_type_sexpr(
     node: Node | Tree,
     depth: int = 0,
     max_depth: int | None = None,
 ) -> list[str]:
-    """Print the parse tree in a readable format."""
+    """Print node type in sexpr format.
+
+    Include 'text' only for leaf nodes.
+
+    Return:
+        list[str]: a list of lines
+
+    """
     if isinstance(node, Tree):
         node = node.root_node
 
@@ -37,7 +44,7 @@ def get_node_lines(
     if node.children:
         result.append(f'{indent}{node.type}')
         for child in node.children:
-            child_result = get_node_lines(child, depth + 1, max_depth)
+            child_result = get_node_type_sexpr(child, depth + 1, max_depth)
             if child_result:  # Only extend if child_result is not empty
                 result.extend(child_result)
     else:

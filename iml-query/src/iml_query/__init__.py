@@ -2,9 +2,9 @@ from textwrap import indent
 
 from tree_sitter import Node, Point
 
-from iml_query.tree_sitter_utils import get_language, get_node_lines, get_parser
+from iml_query.tree_sitter_utils import get_language, get_parser
 
-__all__ = ['get_language', 'get_node_lines', 'get_parser']
+__all__ = ['get_language', 'get_parser']
 
 
 def fmt_node(node: Node) -> str:
