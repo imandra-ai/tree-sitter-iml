@@ -11,6 +11,7 @@ from tree_sitter import Language, Node, Parser, Point, Query, QueryCursor
 from iml_query import fmt_node, get_node_lines, get_parser
 from iml_query.query import (
     axiom_query,
+    decomp_node_to_req,
     decomp_query,
     eval_node_to_src,
     eval_query,
@@ -47,16 +48,16 @@ captures = run_query(decomp_query, eg)
 
 
 for query_name, nodes in captures.items():
-    print(f'Capture: {query_name}')
+    print(f'Capture: {query_name = }')
     for i, node in enumerate(nodes, 1):
         # print(escape(f'{i}. {fmt_node(node)}'))
         node_s = '\n'.join(get_node_lines(node))
-        print(escape(f'{i}.'))
+        print(escape(f'Node {i}.'))
         # print('node:')
         # print(escape(indent(node_s, '  ')))
         if node.text:
             print()
-            print('text:')
+            print('Node text:')
             print(escape(indent(node.text.decode('utf-8'), '  ')))
         print()
         match node.type:
@@ -72,7 +73,12 @@ for query_name, nodes in captures.items():
                 src = eval_node_to_src(node)
                 print('eval src:')
                 print(escape(indent(src, '  ')))
+            case 'decomposed_':
+                req = decomp_node_to_req(node)
+                print('imandrax-api Req:')
+                pprint(req)
             case _:
                 pass
 
         # breakpoint()
+    print('=' * 20)
