@@ -1,8 +1,30 @@
+import structlog
 from tree_sitter import Node, Query, QueryCursor
 
 from iml_query.tree_sitter_utils import get_language, get_parser
 
+logger = structlog.get_logger(__name__)
+
 iml_language = get_language(ocaml=False)
+
+
+def mk_query(query_src: str) -> Query:
+    """Create a Tree-sitter query from the given source."""
+    return Query(iml_language, query_src)
+
+
+def run_query(query: Query, code: str | bytes) -> dict[str, list[Node]]:
+    """Run a Tree-sitter query on the given code."""
+    if isinstance(code, str):
+        code = bytes(code, 'utf8')
+    parser = get_parser(ocaml=False)
+    tree = parser.parse(code)
+    cursor = QueryCursor(query=query)
+    return cursor.captures(tree.root_node)
+
+
+# =====
+
 
 VERIFY_QUERY_SRC = r"""
 (verify_statement) @verify
@@ -31,9 +53,10 @@ DECOMP_QUERY_SRC = r"""
         (item_attribute
             (attribute_id) @attribute_id
             (#eq? @attribute_id "decomp")
+            (attribute_payload) @attribute_payload
         ) @item_attr
     )
-) @full_def
+) @decomposed_func
 """
 
 EVAL_QUERY_SRC = r"""
@@ -91,21 +114,6 @@ opaque_query = Query(iml_language, OPAQUE_QUERY_SRC)
 import_query = Query(iml_language, IMPORT_QUERY_SRC)
 
 
-def mk_query(query_src: str) -> Query:
-    """Create a Tree-sitter query from the given source."""
-    return Query(iml_language, query_src)
-
-
-def run_query(query: Query, code: str | bytes) -> dict[str, list[Node]]:
-    """Run a Tree-sitter query on the given code."""
-    if isinstance(code, str):
-        code = bytes(code, 'utf8')
-    parser = get_parser(ocaml=False)
-    tree = parser.parse(code)
-    cursor = QueryCursor(query=query)
-    return cursor.captures(tree.root_node)
-
-
 def verify_node_to_req(node: Node) -> dict[str, str]:
     """Extract ImandraX request from a verify statement node."""
     req: dict[str, str] = {}
@@ -146,3 +154,12 @@ def eval_node_to_src(node: Node) -> str:
     if src.startswith('(') and src.endswith(')'):
         src = src[1:-1].strip()
     return src
+
+
+def decomp_node_to_req(node: Node) -> dict[str, str]:
+    """Extract ImandraX request from a decomposition statement node."""
+    assert node.type == 'value_definition', 'need to be a function definition'
+    req: dict[str, str] = {}
+    logger.log(node.children)
+
+    return req
