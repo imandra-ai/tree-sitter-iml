@@ -1,0 +1,204 @@
+(**
+ * =========================================================================
+ * ## 1. Basic Usage: `top ()`
+ * =========================================================================
+ * The most straightforward use of `decomp`. It partitions the function's
+ * input based on its internal conditional structure.
+ *)
+
+(* A simple function with a disjunction (OR) in its condition. *)
+
+let basic_fun (x : int) =
+  if x = 1 || x = 2 then x + 1 else x - 1
+[@@decomp top ()]
+
+(*
+ * Expected output: A set of disjoint regions covering all integers.
+ * For example:
+ * - Region 1: Constraints `x = 1`, Invariant `x + 1`
+ * - Region 2: Constraints `x = 2`, Invariant `x + 1`
+ * - Region 3: Constraints `x <> 1` and `x <> 2`, Invariant `x - 1`
+ *)
+
+
+(**
+ * =========================================================================
+ * ## 2. Scoped Decomposition: `~assuming`
+ * =========================================================================
+ * This option restricts the decomposition to a subset of the input
+ * domain where a given precondition holds true.
+ *)
+
+(* A precondition: the input must be a positive integer. *)
+let is_positive (x : int) = x > 0
+
+(* A function to be analyzed only for positive inputs. *)
+let assuming_fun (x : int) =
+  if x mod 2 = 0 then "even" else "odd"
+[@@decomp top ~assuming:[%id is_positive] ()]
+
+(*
+ * Expected output: The regions will only cover the domain where `x > 0`.
+ * - Region 1: Constraints `x > 0` and `x mod 2 = 0`, Invariant `"even"`
+ * - Region 2: Constraints `x > 0` and `x mod 2 <> 0`, Invariant `"odd"`
+ *)
+
+
+(**
+ * =========================================================================
+ * ## 3. Symbolic Decomposition: `~basis`
+ * =========================================================================
+ * Keeps specified function calls symbolic ("opaque") instead of expanding
+ * their definitions during decomposition.
+ *)
+
+(* A helper function we want to treat as a "black box". *)
+let helper_fun (x : int) = x * x - 10
+
+(* A main function that depends on the output of the helper. *)
+let basis_fun (x : int) =
+  if helper_fun x > 0 then "positive_helper" else "non_positive_helper"
+[@@decomp top ~basis:[[%id helper_fun]] ()]
+
+(*
+ * Expected output: The region constraints will be in terms of `helper_fun x`.
+ * - Region 1: Constraints `helper_fun x > 0`, Invariant `"positive_helper"`
+ * - Region 2: Constraints `not (helper_fun x > 0)`, Invariant `"non_positive_helper"`
+ *)
+
+
+(**
+ * =========================================================================
+ * ## 4. Composition Operator: `|>> prune`
+ * =========================================================================
+ * The `|>>` operator applies a refiner to a decomposition. `prune` is
+ * a refiner that removes infeasible regions (those with unsatisfiable
+ * constraints).
+ *)
+
+(* This function has a simple condition. *)
+let inner_logic (x : int) =
+  if x > 10 then "large" else "small"
+
+(* This function calls inner_logic, but only if x is less than 8.
+   This creates a hidden conflict with the x > 10 case. *)
+let outer_logic (x : int) =
+  if x < 8 then
+    "Result: " ^ (inner_logic x)
+  else
+    "Input too high"
+
+(*
+ * STEP 1: Decompose `outer_logic`, MERGE the logic from `inner_logic`,
+ * but DO NOT prune the result.
+ *)
+let decomp_before_prune =
+  outer_logic [@@decomp top ~basis:[[%id inner_logic]] () << top () [%id inner_logic]]
+
+
+(*
+ * STEP 2: Do the exact same thing, but add `|>> prune` at the end
+ * to clean up the result.
+ *)
+let decomp_after_prune =
+  outer_logic [@@decomp top ~basis:[[%id inner_logic]] () << top () [%id inner_logic] |>> prune]
+
+(**
+ * =========================================================================
+ * ## 5. Composition Operator: `<<` (Merge)
+ * =========================================================================
+ * Merges a decomposition of one function into another. This is useful
+ * for substituting the definition of a basis function back into a
+ * symbolic decomposition.
+ *)
+
+(*
+ * Here, we take the symbolic decomposition of `basis_fun` (from section 3)
+ * and merge it with the decomposition of `helper_fun`.
+ *)
+let merged_decomp =
+  basis_fun [@@decomp top ~basis:[[%id helper_fun]] () << top () [%id helper_fun]]
+
+(*
+ * Expected output: A full decomposition of `basis_fun`, as if `~basis` was
+ * never used. The constraints will be based on the body of `helper_fun`.
+ * - Region 1: Constraints `x * x - 10 > 0`, Invariant `"positive_helper"`
+ * - Region 2: Constraints `not (x * x - 10 > 0)`, Invariant `"non_positive_helper"`
+ *)
+
+
+(**
+ * =========================================================================
+ * ## 6. Composition Operator: `~|` (Combine)
+ * =========================================================================
+ * Merges regions that share the exact same invariant, creating a
+ * disjunction (OR) of their constraints.
+ *)
+
+(* A function with multiple conditions leading to the same result. *)
+let combine_target_fun (x : int) =
+  if x = -1 then "boundary"
+  else if x = 1 then "boundary"
+  else "interior"
+
+(* A standard decomposition will produce two separate regions for the "boundary" case. *)
+let decomp_before_combine =
+  combine_target_fun [@@decomp top ()]
+
+(* Using `~|` combines them into a single region. *)
+let decomp_after_combine =
+  combine_target_fun [@@decomp ~| (top ())]
+
+(*
+ * Expected combined region:
+ * - Region 1: Constraints `x = -1 or x = 1`, Invariant `"boundary"`
+ * - Region 2: Constraints `x <> -1 and x <> 1`, Invariant `"interior"`
+ *)
+
+
+(**
+ * =========================================================================
+ * ## 7. Advanced Simplification: `~rule_specs`
+ * =========================================================================
+ * Applies user-defined rewrite rules during decomposition to simplify
+ * expressions within the function's body.
+ *)
+
+(* A rewrite rule stating that `x + x` is equivalent to `2 * x`.
+   This now uses the correct `lemma ... = ...` syntax. *)
+lemma double_def_is_mult (x : int) =
+  (x + x) = (2 * x)
+[@@rw] [@@imandra_rule_spec]
+ 
+(* A target function that can be simplified by the rule. *)
+let rulespec_fun (x : int) =
+  if x + x > 100 then "large_double" else "small_double"
+ 
+(* Decomposition with the rule spec. The constraint is simplified to `2 * x > 100`. *)
+let decomp_with_rules =
+  rulespec_fun [@@decomp top ~rule_specs:[[%id double_def_is_mult]] ()]
+
+
+(**
+ * =========================================================================
+ * ## 8. Contextual Simplification: `~ctx_simp`
+ * =========================================================================
+ * Enables simplification of conditions based on the surrounding context
+ * from outer `if-then-else` branches.
+ *)
+
+(*
+ * In the inner `if`, the condition `x <= y` is impossible because the
+ * outer `if` establishes the context that `x > y`.
+ *)
+let ctx_simp_fun (x : int) (y : int) =
+  if x > y then
+    if x <= y then "unreachable_by_context"
+    else "x_is_greater"
+  else "x_not_greater"
+[@@decomp top ~ctx_simp:true ()]
+
+(*
+ * Expected output: With `ctx_simp:true`, the "unreachable_by_context"
+ * region will be automatically proven infeasible and pruned away.
+ *)
