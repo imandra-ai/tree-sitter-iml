@@ -1,3 +1,5 @@
+from typing import cast
+
 import structlog
 from tree_sitter import Node, Query, QueryCursor
 
@@ -15,7 +17,8 @@ def mk_query(query_src: str) -> Query:
 
 def run_query(
     query: Query,
-    code: str | bytes,
+    code: str | bytes | None = None,
+    node: Node | None = None,
 ) -> list[tuple[int, dict[str, list[Node]]]]:
     """Run a Tree-sitter query on the given code.
 
@@ -24,14 +27,22 @@ def run_query(
         the second element is a dictionary that maps capture names to nodes.
 
     """
-    if isinstance(code, str):
-        code = bytes(code, 'utf8')
+    if code is None == node is None:
+        raise ValueError('Exactly one of code or node must be provided')
 
-    parser = get_parser(ocaml=False)
-    tree = parser.parse(code)
+    if code is not None:
+        if isinstance(code, str):
+            code = bytes(code, 'utf8')
+
+        parser = get_parser(ocaml=False)
+        tree = parser.parse(code)
+
+        node = tree.root_node
+
+    node = cast(Node, node)
+
     cursor = QueryCursor(query=query)
-    # return cursor.captures(tree.root_node)
-    return cursor.matches(tree.root_node)
+    return cursor.matches(node)
 
 
 def group_captures(captures: dict[str, list[Node]]) -> dict[str, list[Node]]:
@@ -188,3 +199,15 @@ def decomp_capture_to_req(capture: dict[str, list[Node]]) -> dict[str, str]:
 
     req = req
     return req
+
+
+# query on application expression
+TOP_QUERY = r"""
+
+"""
+
+
+def top_application_to_decomp(node: Node) -> dict[str, str]:
+    node.children[0].text == 'top'
+
+    pass
