@@ -79,104 +79,123 @@ print()
 print(f2(application_expression_node))
 print()
 
-q = r"""
+extract_top_arg_query = mk_query(r"""
 (application_expression
     (value_path
         (value_name) @top
         (#eq? @top "top")
     )
-
     (labeled_argument
-        (label_name) @assuming
-        (extension
-            "[%"
-            (attribute_id) @attribute_id
-            (attribute_payload) @assuming_payload
-        )
-        (#eq? @assuming "assuming")
-        (#eq? @attribute_id "id")
-    )?
-
-    (labeled_argument
-        (label_name) @basis
-        (list_expression
-            (extension
-                "[%"
-                (attribute_id)
-                (attribute_payload)
-            )+ @basis_extensions
-        )
-
-        (#eq? @basis "basis")
-    )?
-
-    (labeled_argument
-        (label_name) @prune
-        (boolean) @prune_value
-        (#eq? @prune "prune")
-    )?
-
-    (labeled_argument
-        (label_name) @ctx_simp
-        (boolean) @ctx_simp_value
-        (#eq? @ctx_simp "ctx_simp")
-    )?
-
-    (labeled_argument
-        (label_name) @lift_bool
-        (constructor_path
-            (constructor_name) @lift_bool_value
-        )
-        (#eq? @lift_bool "lift_bool")
-    )?
-
+        (label_name) @label
+    ) @arg
     (unit)
 )
-"""
+""")
 
+matches = run_query(
+    query=extract_top_arg_query, node=application_expression_node
+)
+print(f'Found {len(matches)} labeled arguments')
 
-matches = run_query(query=mk_query(q), node=application_expression_node)
+print(f'Matches: \n{matches}')
 
-assert len(matches) == 1, f'Expected 1 match, got {len(matches)}'
 res = {}
-capture = matches[0][1]
-
-print(f'Capture:\n{capture}\n')
 
 
 class DecompParsingError(Exception):
     pass
 
 
-if 'assuming' in capture:
-    assuming_payload_b = capture['assuming_payload'][0].text
-    assert assuming_payload_b, 'Never: no assuming payload'
-    assuming_payload = assuming_payload_b.decode('utf-8')
-    res['assuming'] = assuming_payload
+# Process each labeled argument based on its label
+for _, capture in matches:
+    label_name_b = capture['label'][0].text
+    assert label_name_b, 'Never: no label'
+    label_name = label_name_b.decode('utf-8')
+    arg_node = capture['arg'][0]
 
-if 'prune' in capture:
-    prune_value_b = capture['prune_value'][0].text
-    assert prune_value_b, 'Never: no prune value'
-    prune_value: str = prune_value_b.decode('utf-8')
-    res['prune'] = prune_value == 'true'
+    match label_name:
+        case 'assuming':
+            # Parse assuming: ~assuming:[%id simple_branch]
+            assuming_query = mk_query(r"""
+            (extension
+                "[%"
+                (attribute_id) @attr_id
+                (attribute_payload) @payload
+                (#eq? @attr_id "id")
+            )
+            """)
+            assuming_matches = run_query(query=assuming_query, node=arg_node)
+            if assuming_matches:
+                payload_text = assuming_matches[0][1]['payload'][0].text
+                assert payload_text, 'Never: no assuming payload'
+                res['assuming'] = payload_text.decode('utf-8')
 
-if 'ctx_simp' in capture:
-    ctx_simp_value_b = capture['ctx_simp_value'][0].text
-    assert ctx_simp_value_b, 'Never: no ctx_simp value'
-    ctx_simp_value: str = ctx_simp_value_b.decode('utf-8')
-    res['ctx_simp'] = ctx_simp_value == 'true'
+        case 'basis' | 'rule_specs':
+            # Parse list of identifiers: ~basis:[[%id simple_branch] ; [%id f]]
+            # Query each extension separately to get all identifiers
+            extension_query = mk_query(r"""
+            (extension
+                "[%"
+                (attribute_id)
+                (attribute_payload
+                    (expression_item
+                        (value_path
+                            (value_name) @id
+                        )
+                    )
+                )
+            )
+            """)
+            extension_matches = run_query(query=extension_query, node=arg_node)
+            if extension_matches:
+                ids = []
+                for match in extension_matches:
+                    id_node = match[1]['id'][0]
+                    id_text = id_node.text
+                    assert id_text, f'Never: no {label_name} id text'
+                    ids.append(id_text.decode('utf-8'))
+                res[label_name] = ids
 
-if 'lift_bool' in capture:
-    lift_bool_value_b = capture['lift_bool_value'][0].text
-    assert lift_bool_value_b, 'Never: no lift_bool value'
-    lift_bool_value: str = lift_bool_value_b.decode('utf-8')
-    lift_bool_enum = ['Default', 'Nested_equalities', 'Equalities', 'All']
-    if lift_bool_value not in lift_bool_enum:
-        raise DecompParsingError(
-            f'Invalid lift_bool value: {lift_bool_value}',
-            f'should be one of {lift_bool_enum}',
-        )
-    res['lift_bool'] = lift_bool_value
+        case 'prune' | 'ctx_simp':
+            # Parse boolean: ~prune:true
+            bool_query = mk_query(r"""
+            (boolean) @bool_val
+            """)
+            bool_matches = run_query(query=bool_query, node=arg_node)
+            if bool_matches:
+                bool_text = bool_matches[0][1]['bool_val'][0].text
+                assert bool_text, f'Never: no {label_name} boolean text'
+                res[label_name] = bool_text.decode('utf-8') == 'true'
+
+        case 'lift_bool':
+            # Parse constructor: ~lift_bool:Default
+            constructor_query = mk_query(r"""
+            (constructor_path
+                (constructor_name) @constructor
+            )
+            """)
+            constructor_matches = run_query(
+                query=constructor_query, node=arg_node
+            )
+            if constructor_matches:
+                constructor_text = constructor_matches[0][1]['constructor'][
+                    0
+                ].text
+                assert constructor_text, 'Never: no lift_bool constructor text'
+                lift_bool_value = constructor_text.decode('utf-8')
+                lift_bool_enum = [
+                    'Default',
+                    'Nested_equalities',
+                    'Equalities',
+                    'All',
+                ]
+                if lift_bool_value not in lift_bool_enum:
+                    raise DecompParsingError(
+                        f'Invalid lift_bool value: {lift_bool_value}',
+                        f'should be one of {lift_bool_enum}',
+                    )
+                res['lift_bool'] = lift_bool_value
+
 
 print(f'Parsed result:\n{res}\n')
 

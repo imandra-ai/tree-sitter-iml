@@ -1,0 +1,180 @@
+(* ImandraX Region Decomposition Examples *)
+(* This file demonstrates various decomposition features and configurations *)
+
+(* ===== BASIC DECOMPOSITION EXAMPLES ===== *)
+
+(* Simple conditional function - basic decomposition *)
+let simple_branch x =
+  if x = 1 || x = 2 then x + 1 else x - 1
+[@@decomp top ()]
+
+(* ===== ASSUMPTION-BASED DECOMPOSITION ===== *)
+
+(* Define preconditions for assumptions *)
+let positive_assumption x = x > 0
+let range_assumption x y = x >= 0 && x <= 10 && y >= 0 && y <= 10
+
+(* Function using assumptions *)
+let sqrt_approximation x =
+  if x < 1 then 0
+  else if x < 4 then 1
+  else if x < 9 then 2
+  else 3
+[@@decomp top ~assuming:[%id positive_assumption] ()]
+
+let bounded_arithmetic x y =
+  let sum = x + y in
+  let diff = x - y in
+  if sum > diff then sum else diff
+[@@decomp top ~assuming:[%id range_assumption] ()]
+
+(* ===== BASIS FUNCTIONS - KEEPING FUNCTIONS SYMBOLIC ===== *)
+
+(* Helper functions to be kept symbolic *)
+let expensive_computation x = x * x * x + 2 * x + 1
+let external_api_call x = if x mod 2 = 0 then x / 2 else 3 * x + 1
+
+(* Function that uses helper functions *)
+let business_logic x y =
+  let result1 = expensive_computation x in
+  let result2 = external_api_call y in
+  if result1 > result2 then result1 - result2
+  else result2 - result1
+[@@decomp top ~basis:[[%id expensive_computation]; [%id external_api_call]] ()]
+
+(* ===== CONTEXTUAL SIMPLIFICATION EXAMPLES ===== *)
+
+(* Function benefiting from contextual simplification *)
+let context_sensitive x y z =
+  if x = y then
+    if x <> z then x + 1  (* x <> z can be simplified knowing x = y *)
+    else x * 2
+  else
+    if y = z then y - 1
+    else x + y + z
+[@@decomp top ~ctx_simp:true ()]
+
+(* Without contextual simplification for comparison *)
+let context_nosimpl x y z =
+  if x = y then
+    if x <> z then x + 1
+    else x * 2
+  else
+    if y = z then y - 1
+    else x + y + z
+[@@decomp top ~ctx_simp:false ()]
+
+(* ===== PRUNING EXAMPLES ===== *)
+
+(* Function with infeasible branches *)
+let infeasible_branches x =
+  if x > 10 && x < 5 then 999  (* impossible condition *)
+  else if x = 0 then 0
+  else if x > 0 then x
+  else -x
+[@@decomp top () |>> prune]
+
+(* Complex constraints that may have infeasible regions *)
+let complex_constraints x y z =
+  if x + y > z && x - y < z && y - x < z then
+    x + y + z  (* triangle inequality region *)
+  else if x = 0 && y = 0 && z > 0 then
+    z
+  else
+    0
+[@@decomp top () |>> prune]
+
+(* ===== RULE SPECIFICATIONS EXAMPLES ===== *)
+
+(* Define rewrite rules *)
+let double_negation x = not (not x) = x [@@rw] [@@imandra_rule_spec]
+let addition_commutativity x y = x + y = y + x [@@rw] [@@imandra_rule_spec]
+let multiplication_zero x = x * 0 = 0 [@@rw] [@@imandra_rule_spec]
+
+(* Function using rule specifications *)
+let with_rules x y =
+  let temp = not (not (x > 0)) in  (* can be simplified using double_negation *)
+  if temp then
+    (y + x) * 0  (* can be simplified using commutativity and mult_zero *)
+  else
+    x - y
+[@@decomp top ~rule_specs:[[%id double_negation]; [%id addition_commutativity]; [%id multiplication_zero]] ()]
+
+(* ===== COMPOSITION OPERATIONS ===== *)
+
+(* Functions for composition examples *)
+let base_function x =
+  if x mod 3 = 0 then 0
+  else if x mod 3 = 1 then 1
+  else 2
+[@@decomp top ()]
+
+let dependent_function x =
+  let base_result = base_function x in
+  if base_result = 0 then x / 3
+  else if base_result = 1 then x + 1
+  else x - 1
+
+(* Decompose with basis first, then merge *)
+let merged_decomposition = dependent_function
+[@@decomp top ~basis:[[%id base_function]] () << top () [%id base_function]]
+
+(* Compound merge example *)
+let compound_merged = dependent_function
+[@@decomp top ~basis:[[%id base_function]] () <|< top () [%id base_function]]
+
+(* Combine regions with same invariants *)
+let redundant_regions x =
+  if x > 0 then 1
+  else if x < -10 then 1  (* same result as x > 0 case *)
+  else if x = 0 then 0
+  else 1  (* another case with result 1 *)
+[@@decomp ~| (top ())]
+
+(* ===== ENUMERATION EXAMPLES ===== *)
+
+(* Simple enumeration target - basic decomposition for test case generation *)
+let enum_target x y =
+  if x + y = 5 then "sum_five"
+  else if x * y = 6 then "product_six"
+  else "other"
+[@@decomp top ()]
+
+(* Functions that can be used as basis for enumeration *)
+let enum_base1 x = x mod 2 = 0 [@@decomp top ()]
+let enum_base2 x = x > 5 [@@decomp top ()]
+
+(* Complex function using the basis functions *)
+let enum_complex x =
+  let even = enum_base1 x in
+  let large = enum_base2 x in
+  if even && large then "even_large"
+  else if even then "even_small"
+  else if large then "odd_large"
+  else "odd_small"
+[@@decomp top ~basis:[[%id enum_base1]; [%id enum_base2]] ()]
+
+(* ===== ADVANCED COMPOSITION CHAIN ===== *)
+
+(* Complex pipeline demonstrating multiple operations *)
+let pipeline_function x y z =
+  let intermediate = expensive_computation x in
+  if intermediate > y + z then
+    if y = z then intermediate + 1
+    else intermediate - 1
+  else
+    if y > z then y else z
+
+(* Multi-step decomposition pipeline *)
+let final_pipeline = pipeline_function
+[@@decomp
+  top ~basis:[[%id expensive_computation]] ~ctx_simp:true ()
+  |>> prune
+  << top () [%id expensive_computation]
+]
+
+let final_pipeline2 = pipeline_function
+[@@decomp
+  top ~basis:[[%id expensive_computation]] ~ctx_simp:true ()
+  << top () [%id expensive_computation] |>> prune
+]

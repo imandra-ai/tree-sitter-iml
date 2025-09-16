@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 import structlog
 from tree_sitter import Node, Query, QueryCursor
@@ -183,6 +183,12 @@ def eval_node_to_src(node: Node) -> str:
     return src
 
 
+class DecompParsingError(Exception):
+    """Exception raised when parsing decomp fails."""
+
+    pass
+
+
 def decomp_capture_to_req(capture: dict[str, list[Node]]) -> dict[str, str]:
     """Extract ImandraX request from a decomp capture."""
     req: dict[str, str] = {}
@@ -193,21 +199,134 @@ def decomp_capture_to_req(capture: dict[str, list[Node]]) -> dict[str, str]:
     req['func_name'] = func_name.decode('utf-8')
 
     # Decomp
-    decomp_payload = capture['attribute_payload'][0].text
-    assert decomp_payload, 'No decomp payload'
-    req['decomp_payload'] = decomp_payload.decode('utf-8')
+    decomp_payload_node = capture['attribute_payload'][0]
+    decomp_payload_b = decomp_payload_node.text
+    assert decomp_payload_b, 'No decomp payload'
+    req['decomp_payload'] = decomp_payload_b.decode('utf-8')
 
     req = req
     return req
 
 
-# query on application expression
-TOP_QUERY = r"""
+def top_application_to_decomp(node: Node) -> dict[str, Any]:
+    """Extract Decomp request request from a top application node."""
+    assert node.type == 'application_expression'
 
-"""
+    extract_top_arg_query = mk_query(r"""
+    (application_expression
+        (value_path
+            (value_name) @top
+            (#eq? @top "top")
+        )
+        (labeled_argument
+            (label_name) @label
+        ) @arg
+        (unit)
+    )
+    """)
 
+    matches = run_query(query=extract_top_arg_query, node=node)
+    print(f'Found {len(matches)} labeled arguments')
 
-def top_application_to_decomp(node: Node) -> dict[str, str]:
-    node.children[0].text == 'top'
+    print(f'Matches: \n{matches}')
 
-    pass
+    res: dict[str, Any] = {}
+
+    # Process each labeled argument based on its label
+    for _, capture in matches:
+        label_name_b = capture['label'][0].text
+        assert label_name_b, 'Never: no label'
+        label_name = label_name_b.decode('utf-8')
+        arg_node = capture['arg'][0]
+
+        match label_name:
+            case 'assuming':
+                # Parse assuming: ~assuming:[%id simple_branch]
+                assuming_query = mk_query(r"""
+                (extension
+                    "[%"
+                    (attribute_id) @attr_id
+                    (attribute_payload) @payload
+                    (#eq? @attr_id "id")
+                )
+                """)
+                assuming_matches = run_query(
+                    query=assuming_query, node=arg_node
+                )
+                if assuming_matches:
+                    payload_text = assuming_matches[0][1]['payload'][0].text
+                    assert payload_text, 'Never: no assuming payload'
+                    res['assuming'] = payload_text.decode('utf-8')
+
+            case 'basis' | 'rule_specs':
+                # Query each extension separately to get all identifiers
+                extension_query = mk_query(r"""
+                (extension
+                    "[%"
+                    (attribute_id)
+                    (attribute_payload
+                        (expression_item
+                            (value_path
+                                (value_name) @id
+                            )
+                        )
+                    )
+                )
+                """)
+                extension_matches = run_query(
+                    query=extension_query, node=arg_node
+                )
+                if extension_matches:
+                    ids: list[str] = []
+                    for match in extension_matches:
+                        id_node = match[1]['id'][0]
+                        id_text = id_node.text
+                        assert id_text, f'Never: no {label_name} id text'
+                        ids.append(id_text.decode('utf-8'))
+                    res[label_name] = ids
+
+            case 'prune' | 'ctx_simp':
+                # Parse boolean: ~prune:true
+                bool_query = mk_query(r"""
+                (boolean) @bool_val
+                """)
+                bool_matches = run_query(query=bool_query, node=arg_node)
+                if bool_matches:
+                    bool_text = bool_matches[0][1]['bool_val'][0].text
+                    assert bool_text, f'Never: no {label_name} boolean text'
+                    res[label_name] = bool_text.decode('utf-8') == 'true'
+
+            case 'lift_bool':
+                # Parse constructor: ~lift_bool:Default
+                constructor_query = mk_query(r"""
+                (constructor_path
+                    (constructor_name) @constructor
+                )
+                """)
+                constructor_matches = run_query(
+                    query=constructor_query, node=arg_node
+                )
+                if constructor_matches:
+                    constructor_text = constructor_matches[0][1]['constructor'][
+                        0
+                    ].text
+                    assert constructor_text, (
+                        'Never: no lift_bool constructor text'
+                    )
+                    lift_bool_value = constructor_text.decode('utf-8')
+                    lift_bool_enum = [
+                        'Default',
+                        'Nested_equalities',
+                        'Equalities',
+                        'All',
+                    ]
+                    if lift_bool_value not in lift_bool_enum:
+                        raise DecompParsingError(
+                            f'Invalid lift_bool value: {lift_bool_value}',
+                            f'should be one of {lift_bool_enum}',
+                        )
+                    res['lift_bool'] = lift_bool_value
+            case _:
+                assert 'False', 'Never'
+
+    return res
