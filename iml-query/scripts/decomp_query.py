@@ -33,7 +33,7 @@ root_dir = find_pyproject_dir(Path(__file__), 2)
 
 
 # eg_path = root_dir / 'iml_examples' / 'eg.iml'
-eg_path = root_dir / 'iml_examples' / 'decomp_eg.iml'
+eg_path = root_dir / 'iml_examples' / 'decomp_eg2.iml'
 
 eg = eg_path.read_text()
 
