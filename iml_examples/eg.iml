@@ -1,11 +1,16 @@
 (* Simple IML example with functions, axiom, and theorem *)
 [@@@import "./code-logician-examples/six_swiss.iml"]
-(* [@@@import Six_swiss, "./code-logician-examples/six_swiss.iml"] *)
+[@@@import Six_swiss, "./code-logician-examples/six_swiss.iml"]
 
 let add_one (x: int) : int = x + 1
 [@@decomp top ()]
 
+let is_positive (x: int) : bool = x > 0
+
 let double (x: int) : int = x * 2
+
+let decomp_double = double
+[@@decomp top ~assuming: [%id is_positive] ~prune: true ()]
 
 let square : int -> int = ()
 [@@opaque]

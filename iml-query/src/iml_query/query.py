@@ -102,6 +102,7 @@ OPAQUE_QUERY_SRC = r"""
 ) @full_def
 """
 
+# TODO:
 # [@@@import Mod_name, "path/to/file.iml"] (path import with explicit module name)
 # [@@@import Mod_name, "path/to/file.iml", Mod_name2] (same, with explicit extraction name)
 # [@@@import "path/to/file.iml"] (path import as module `File`)
@@ -110,7 +111,7 @@ OPAQUE_QUERY_SRC = r"""
 # [@@@import Mod_name, "dune:foo.bar"] (import from dune library)
 # [@@@import Mod_name, "dune:foo.bar", Mod_name2] (same, with explicit extraction name)
 
-IMPORT_QUERY_SRC = r"""
+IMPORT_1_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
     (attribute_id) @attribute_id
@@ -130,15 +131,29 @@ IMPORT_QUERY_SRC = r"""
 ) @import
 """
 
-verify_query = Query(iml_language, VERIFY_QUERY_SRC)
-instance_query = Query(iml_language, INSTANCE_QUERY_SRC)
-axiom_query = Query(iml_language, AXIOM_QUERY_SRC)
-theorem_query = Query(iml_language, THEOREM_QUERY_SRC)
-lemma_query = Query(iml_language, LEMMA_QUERY_SRC)
-decomp_query = Query(iml_language, DECOMP_QUERY_SRC)
-eval_query = Query(iml_language, EVAL_QUERY_SRC)
-opaque_query = Query(iml_language, OPAQUE_QUERY_SRC)
-import_query = Query(iml_language, IMPORT_QUERY_SRC)
+IMPORT_3_QUERY_SRC = r"""
+(floating_attribute
+    "[@@@"
+    (attribute_id) @attribute_id
+    (#eq? @attribute_id "import")
+    (attribute_payload
+        (expression_item
+            (string
+                (string_content) @import_path
+            )
+        )
+    )
+) @import
+"""
+
+verify_query = mk_query(VERIFY_QUERY_SRC)
+instance_query = mk_query(INSTANCE_QUERY_SRC)
+axiom_query = mk_query(AXIOM_QUERY_SRC)
+theorem_query = mk_query(THEOREM_QUERY_SRC)
+lemma_query = mk_query(LEMMA_QUERY_SRC)
+decomp_query = mk_query(DECOMP_QUERY_SRC)
+eval_query = mk_query(EVAL_QUERY_SRC)
+opaque_query = mk_query(OPAQUE_QUERY_SRC)
 
 
 def verify_node_to_req(node: Node) -> dict[str, str]:
