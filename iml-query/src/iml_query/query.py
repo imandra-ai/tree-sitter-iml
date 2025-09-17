@@ -371,7 +371,25 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
 
 
 def extract_verify_req(iml: str) -> list[dict[str, Any]]:
-    pass
+    reqs: list[dict[str, Any]] = []
+    matches = run_query(verify_query, iml)
+
+    for _, capture in matches:
+        verify_statement_node = capture['verify'][0]
+        reqs.append(verify_node_to_req(verify_statement_node))
+
+    return reqs
+
+
+def extract_instance_req(iml: str) -> list[dict[str, Any]]:
+    reqs: list[dict[str, Any]] = []
+    matches = run_query(instance_query, iml)
+
+    for _, capture in matches:
+        instance_statement_node = capture['instance'][0]
+        reqs.append(instance_node_to_req(instance_statement_node))
+
+    return reqs
 
 
 def extract_decomp_req(iml: str) -> list[dict[str, Any]]:
@@ -380,7 +398,6 @@ def extract_decomp_req(iml: str) -> list[dict[str, Any]]:
 
     for _, capture in matches:
         req: dict[str, Any] = {}
-
         decomposed_func_name_node = capture['decomposed_func_name'][0]
         decomp_payload = capture['decomp_payload'][0]
         name = unwrap_byte(decomposed_func_name_node.text).decode('utf-8')
