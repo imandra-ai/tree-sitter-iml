@@ -50,6 +50,14 @@ def group_captures(captures: dict[str, list[Node]]) -> dict[str, list[Node]]:
     return {name: nodes for name, nodes in captures.items() if name}
 
 
+def unwrap_byte(node_text: bytes | None) -> bytes:
+    if node_text is None:
+        raise ValueError('Node text is None')
+    return node_text
+
+
+# =====
+# Queries and node transformation
 # =====
 
 
@@ -76,14 +84,14 @@ LEMMA_QUERY_SRC = r"""
 DECOMP_QUERY_SRC = r"""
 (value_definition
     (let_binding
-        (value_name) @func_name
+        (value_name) @decomposed_func_name
         (item_attribute
             (attribute_id) @attribute_id
+            (attribute_payload) @decomp_payload
             (#eq? @attribute_id "decomp")
-            (attribute_payload) @attribute_payload
         ) @item_attr
     )
-) @decomposed_func
+)
 """
 
 EVAL_QUERY_SRC = r"""
@@ -241,9 +249,9 @@ def top_application_to_decomp(node: Node) -> dict[str, Any]:
     """)
 
     matches = run_query(query=extract_top_arg_query, node=node)
-    print(f'Found {len(matches)} labeled arguments')
+    # print(f'Found {len(matches)} labeled arguments')
 
-    print(f'Matches: \n{matches}')
+    # print(f'Matches: \n{matches}')
 
     res: dict[str, Any] = {}
 
@@ -345,3 +353,43 @@ def top_application_to_decomp(node: Node) -> dict[str, Any]:
                 assert 'False', 'Never'
 
     return res
+
+
+def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
+    assert node.type == 'attribute_payload'
+
+    expect_appl = node.children[0].children[0]
+    if expect_appl.type != 'application_expression':
+        raise NotImplementedError('Composition operators are not supported yet')
+
+    return top_application_to_decomp(expect_appl)
+
+
+# ======
+# End-to-end extract
+# ======
+
+
+def extract_verify_req(iml: str) -> list[dict[str, Any]]:
+    pass
+
+
+def extract_decomp_req(iml: str) -> list[dict[str, Any]]:
+    reqs: list[dict[str, Any]] = []
+    matches = run_query(decomp_query, iml)
+
+    for _, capture in matches:
+        req: dict[str, Any] = {}
+
+        decomposed_func_name_node = capture['decomposed_func_name'][0]
+        decomp_payload = capture['decomp_payload'][0]
+        name = unwrap_byte(decomposed_func_name_node.text).decode('utf-8')
+        req['name'] = name
+
+        req_labels = decomp_attribute_payload_to_decomp_req_labels(
+            decomp_payload
+        )
+        req |= req_labels
+        reqs.append(req)
+
+    return reqs

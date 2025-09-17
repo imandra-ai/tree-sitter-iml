@@ -1,3 +1,16 @@
+from tree_sitter import Node
+
+from iml_query.tree_sitter_utils import get_node_type_sexpr
+
+
+def f1(node: Node) -> str:
+    return '\n'.join(get_node_type_sexpr(node))
+
+
+def f2(node: Node) -> str:
+    return format_treesitter_sexp(str(node))
+
+
 def format_treesitter_sexp(s_expr: str, indent_size: int = 2):
     """Format tree-sitter S-expression with field names."""
     # Tokenize
