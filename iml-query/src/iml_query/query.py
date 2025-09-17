@@ -176,7 +176,7 @@ def verify_node_to_req(node: Node) -> dict[str, str]:
     if verify_src.startswith('(') and verify_src.endswith(')'):
         verify_src = verify_src[1:-1].strip()
 
-    req['verify_src'] = verify_src
+    req['src'] = verify_src
     return req
 
 
@@ -191,7 +191,7 @@ def instance_node_to_req(node: Node) -> dict[str, str]:
     # Remove parentheses
     if instance_src.startswith('(') and instance_src.endswith(')'):
         instance_src = instance_src[1:-1].strip()
-    req['instance_src'] = instance_src
+    req['src'] = instance_src
     return req
 
 
@@ -352,6 +352,14 @@ def top_application_to_decomp(node: Node) -> dict[str, Any]:
             case _:
                 assert 'False', 'Never'
 
+    default_res: dict[str, Any] = {
+        'basis': [],
+        'rule_specs': [],
+        'prune': False,
+    }
+
+    res = default_res | res
+
     return res
 
 
@@ -368,6 +376,19 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
 # ======
 # End-to-end extract
 # ======
+
+# TODO: include range in outcome?
+
+
+def extract_opaque_function_names(iml: str) -> list[str]:
+    opaque_functions: list[str] = []
+    matches = run_query(opaque_query, iml)
+    for _, capture in matches:
+        value_name_node = capture['func_name'][0]
+        func_name = unwrap_byte(value_name_node.text).decode('utf-8')
+        opaque_functions.append(func_name)
+
+    return opaque_functions
 
 
 def extract_verify_req(iml: str) -> list[dict[str, Any]]:
@@ -410,3 +431,12 @@ def extract_decomp_req(iml: str) -> list[dict[str, Any]]:
         reqs.append(req)
 
     return reqs
+
+
+def iml_outline(iml: str) -> dict[str, Any]:
+    outline: dict[str, Any] = {}
+    outline['verify_req'] = extract_verify_req(iml)
+    outline['instance_req'] = extract_instance_req(iml)
+    outline['decompose_req'] = extract_decomp_req(iml)
+    outline['opaque_function'] = extract_opaque_function_names(iml)
+    return outline
