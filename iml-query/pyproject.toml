@@ -64,6 +64,7 @@ ignore = [
     "C417",   # Unnecessary `map()` usage (rewrite using a generator expression)
     "D100", # ignore missing docstring in module
     "D102", # ignore missing docstring in public method
+    "D103", # ignore missing docstring in public function
     "D104", # ignore missing docstring in public package
     "D105", # ignore missing docstring in magic methods
     "D107", # ignore missing docstring in __init__ methods
@@ -74,7 +75,7 @@ pycodestyle.ignore-overlong-task-comments = true
 isort.combine-as-imports = true
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/**/*.py" = ["F401", "RUF100", "D"]
+"scripts/**/*.py" = ["F401", "RUF100", "D", "E402"]
 
 [tool.ruff.format]
 quote-style = "single"
