@@ -119,6 +119,14 @@ OPAQUE_QUERY_SRC = r"""
 # [@@@import Mod_name, "dune:foo.bar"] (import from dune library)
 # [@@@import Mod_name, "dune:foo.bar", Mod_name2] (same, with explicit extraction name)
 
+GENERAL_IMPORT_QUERY_SRC = r"""
+(floating_attribute
+    "[@@@"
+    (attribute_id) @attribute_id
+    (#eq? @attribute_id "import")
+) @import
+"""
+
 IMPORT_1_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
@@ -153,15 +161,6 @@ IMPORT_3_QUERY_SRC = r"""
     )
 ) @import
 """
-
-verify_query = mk_query(VERIFY_QUERY_SRC)
-instance_query = mk_query(INSTANCE_QUERY_SRC)
-axiom_query = mk_query(AXIOM_QUERY_SRC)
-theorem_query = mk_query(THEOREM_QUERY_SRC)
-lemma_query = mk_query(LEMMA_QUERY_SRC)
-decomp_query = mk_query(DECOMP_QUERY_SRC)
-eval_query = mk_query(EVAL_QUERY_SRC)
-opaque_query = mk_query(OPAQUE_QUERY_SRC)
 
 
 def verify_node_to_req(node: Node) -> dict[str, str]:
@@ -382,7 +381,7 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
 
 def extract_opaque_function_names(iml: str) -> list[str]:
     opaque_functions: list[str] = []
-    matches = run_query(opaque_query, iml)
+    matches = run_query(mk_query(OPAQUE_QUERY_SRC), iml)
     for _, capture in matches:
         value_name_node = capture['func_name'][0]
         func_name = unwrap_byte(value_name_node.text).decode('utf-8')
@@ -393,7 +392,7 @@ def extract_opaque_function_names(iml: str) -> list[str]:
 
 def extract_verify_req(iml: str) -> list[dict[str, Any]]:
     reqs: list[dict[str, Any]] = []
-    matches = run_query(verify_query, iml)
+    matches = run_query(mk_query(VERIFY_QUERY_SRC), iml)
 
     for _, capture in matches:
         verify_statement_node = capture['verify'][0]
@@ -404,7 +403,7 @@ def extract_verify_req(iml: str) -> list[dict[str, Any]]:
 
 def extract_instance_req(iml: str) -> list[dict[str, Any]]:
     reqs: list[dict[str, Any]] = []
-    matches = run_query(instance_query, iml)
+    matches = run_query(mk_query(INSTANCE_QUERY_SRC), iml)
 
     for _, capture in matches:
         instance_statement_node = capture['instance'][0]
@@ -415,7 +414,7 @@ def extract_instance_req(iml: str) -> list[dict[str, Any]]:
 
 def extract_decomp_req(iml: str) -> list[dict[str, Any]]:
     reqs: list[dict[str, Any]] = []
-    matches = run_query(decomp_query, iml)
+    matches = run_query(mk_query(DECOMP_QUERY_SRC), iml)
 
     for _, capture in matches:
         req: dict[str, Any] = {}
