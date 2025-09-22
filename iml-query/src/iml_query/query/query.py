@@ -1,7 +1,7 @@
-from typing import Any, cast
+from typing import Any, cast, overload
 
 import structlog
-from tree_sitter import Node, Query, QueryCursor
+from tree_sitter import Node, Query, QueryCursor, Tree
 
 from iml_query.tree_sitter_utils import get_language, get_parser
 
@@ -86,10 +86,10 @@ DECOMP_QUERY_SRC = r"""
     (let_binding
         (value_name) @decomposed_func_name
         (item_attribute
-            (attribute_id) @attribute_id
+            (attribute_id) @_decomp_id
             (attribute_payload) @decomp_payload
-            (#eq? @attribute_id "decomp")
-        ) @item_attr
+            (#eq? @_decomp_id "decomp")
+        ) @decomp_attr
     )
 )
 """
@@ -380,10 +380,88 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
 
 
 # ======
-# End-to-end extract
+# Extract
 # ======
 
-# TODO: include range in outcome?
+
+@overload
+def delete_nodes(
+    nodes: list[Node],
+    iml: str,
+    old_tree: Tree,
+) -> tuple[str, Tree]: ...
+
+
+@overload
+def delete_nodes(
+    nodes: list[Node],
+    iml: str,
+) -> tuple[str, None]: ...
+
+
+def delete_nodes(
+    nodes: list[Node],
+    iml: str,
+    old_tree: Tree | None = None,
+) -> tuple[str, Tree | None]:
+    """Delete nodes from IML string and return updated string and tree.
+
+    Return new tree if old_tree is provided.
+
+    Arguments:
+        nodes: list of nodes to delete
+        iml: old IML code
+        old_tree: old parsed tree
+
+    """
+    if not nodes:
+        return iml, old_tree
+
+    # Extract byte ranges from nodes
+    edits = [node.byte_range for node in nodes]
+
+    # Check for overlapping edits
+    sorted_edits = sorted(edits, key=lambda x: x[0])
+    for i in range(len(sorted_edits) - 1):
+        curr_end = sorted_edits[i][1]
+        next_start = sorted_edits[i + 1][0]
+        if curr_end > next_start:
+            raise ValueError(
+                f'Overlapping nodes: positions {sorted_edits[i]} and '
+                f'{sorted_edits[i + 1]}'
+            )
+
+    # Apply tree edits if we have an old tree
+    if old_tree is not None:
+        # Sort nodes by start position for tree editing
+        sorted_nodes = sorted(nodes, key=lambda x: x.start_byte)
+
+        # Apply tree edits in forward order
+        for node in sorted_nodes:
+            old_tree.edit(
+                start_byte=node.start_byte,
+                old_end_byte=node.end_byte,
+                new_end_byte=node.start_byte,
+                start_point=node.start_point,
+                old_end_point=node.end_point,
+                new_end_point=node.start_point,
+            )
+
+    # Apply deletions to text in reverse order to avoid offset issues
+    edits_reversed = sorted(edits, key=lambda x: x[0], reverse=True)
+    iml_b = bytes(iml, encoding='utf8')
+    for start, end in edits_reversed:
+        iml_b = iml_b[:start] + iml_b[end:]
+    iml = iml_b.decode('utf8')
+
+    # Get new tree
+    if old_tree is not None:
+        parser = get_parser(ocaml=False)
+        new_tree = parser.parse(iml_b, old_tree=old_tree)
+    else:
+        new_tree = None
+
+    return iml, new_tree
 
 
 def extract_opaque_function_names(iml: str) -> list[str]:
@@ -397,52 +475,83 @@ def extract_opaque_function_names(iml: str) -> list[str]:
     return opaque_functions
 
 
-def extract_verify_req(iml: str) -> list[dict[str, Any]]:
+def extract_verify_reqs(
+    iml: str, tree: Tree
+) -> tuple[str, Tree, list[dict[str, Any]]]:
+    root = tree.root_node
+    matches = run_query(
+        mk_query(VERIFY_QUERY_SRC),
+        node=root,
+    )
+
     reqs: list[dict[str, Any]] = []
-    matches = run_query(mk_query(VERIFY_QUERY_SRC), iml)
+    nodes_to_delete: list[Node] = []
 
     for _, capture in matches:
         verify_statement_node = capture['verify'][0]
+        nodes_to_delete.append(verify_statement_node)
         reqs.append(verify_node_to_req(verify_statement_node))
 
-    return reqs
+    new_iml, new_tree = delete_nodes(nodes_to_delete, iml, tree)
+    return new_iml, new_tree, reqs
 
 
-def extract_instance_req(iml: str) -> list[dict[str, Any]]:
+def extract_instance_reqs(
+    iml: str, tree: Tree
+) -> tuple[str, Tree, list[dict[str, Any]]]:
+    root = tree.root_node
+    matches = run_query(
+        mk_query(INSTANCE_QUERY_SRC),
+        node=root,
+    )
+
     reqs: list[dict[str, Any]] = []
-    matches = run_query(mk_query(INSTANCE_QUERY_SRC), iml)
+    nodes_to_delete: list[Node] = []
 
     for _, capture in matches:
         instance_statement_node = capture['instance'][0]
+        nodes_to_delete.append(instance_statement_node)
         reqs.append(instance_node_to_req(instance_statement_node))
 
-    return reqs
+    new_iml, new_tree = delete_nodes(nodes_to_delete, iml, tree)
+    return new_iml, new_tree, reqs
 
 
-def extract_decomp_req(iml: str) -> list[dict[str, Any]]:
+def extract_decomp_reqs(
+    iml: str, tree: Tree
+) -> tuple[str, Tree, list[dict[str, Any]]]:
+    root = tree.root_node
+    matches = run_query(
+        mk_query(DECOMP_QUERY_SRC),
+        node=root,
+    )
+
     reqs: list[dict[str, Any]] = []
-    matches = run_query(mk_query(DECOMP_QUERY_SRC), iml)
+    nodes_to_delete: list[Node] = []
 
     for _, capture in matches:
-        req: dict[str, Any] = {}
-        decomposed_func_name_node = capture['decomposed_func_name'][0]
-        decomp_payload = capture['decomp_payload'][0]
-        name = unwrap_byte(decomposed_func_name_node.text).decode('utf-8')
-        req['name'] = name
+        decomp_attr_node = capture['decomp_attr'][0]
+        nodes_to_delete.append(decomp_attr_node)
 
+        req: dict[str, Any] = {}
+        req['name'] = unwrap_byte(
+            capture['decomposed_func_name'][0].text
+        ).decode('utf8')
         req_labels = decomp_attribute_payload_to_decomp_req_labels(
-            decomp_payload
+            capture['decomp_payload'][0]
         )
         req |= req_labels
         reqs.append(req)
 
-    return reqs
+    new_iml, new_tree = delete_nodes(nodes_to_delete, iml, tree)
+    return new_iml, new_tree, reqs
 
 
 def iml_outline(iml: str) -> dict[str, Any]:
     outline: dict[str, Any] = {}
-    outline['verify_req'] = extract_verify_req(iml)
-    outline['instance_req'] = extract_instance_req(iml)
-    outline['decompose_req'] = extract_decomp_req(iml)
+    tree = get_parser(ocaml=False).parse(bytes(iml, encoding='utf8'))
+    outline['verify_req'] = extract_verify_reqs(iml, tree)[2]
+    outline['instance_req'] = extract_instance_reqs(iml, tree)[2]
+    outline['decompose_req'] = extract_decomp_reqs(iml, tree)[2]
     outline['opaque_function'] = extract_opaque_function_names(iml)
     return outline
