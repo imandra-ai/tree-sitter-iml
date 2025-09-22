@@ -560,7 +560,7 @@ def insert_lines(
     iml_lines = iml.splitlines(keepends=True)
 
     # Validate line number
-    if insert_after < 0 or insert_after >= len(iml_lines):
+    if insert_after < 0 or insert_after > len(iml_lines):
         raise ValueError(
             f'Line number {insert_after} out of range (0-{len(iml_lines) - 1})'
         )
@@ -721,24 +721,41 @@ def insert_decomp_req(
     return new_iml, new_tree
 
 
-# def insert_verify_req(
-#     iml: str,
-#     tree: Tree,
-#     req: dict[str, Any],
-# ) -> tuple[str, Tree]:
-#     func_def_node = find_func_definition(tree, req['name'])
-#     if func_def_node is None:
-#         raise ValueError(f'Function {req["name"]} not found in syntax tree')
+def insert_verify_req(
+    iml: str,
+    tree: Tree,
+    verify_src: str,
+) -> tuple[str, Tree]:
+    if not (verify_src.startswith('(') and verify_src.endswith(')')):
+        verify_src = f'({verify_src})'
+    to_insert = f'verify {verify_src}'
 
-#     func_def_end_row = func_def_node.end_point[0]
+    file_end_row = tree.root_node.end_point[0]
 
-#     top_appl_text = decomp_req_to_top_appl_text(req)
-#     to_insert = f'[@@decomp {top_appl_text}]'
+    new_iml, new_tree = insert_lines(
+        iml,
+        tree,
+        lines=[to_insert],
+        insert_after=file_end_row,
+    )
+    return new_iml, new_tree
 
-#     new_iml, new_tree = insert_lines(
-#         iml,
-#         tree,
-#         lines=[to_insert],
-#         insert_after=func_def_end_row,
-#     )
-#     return new_iml, new_tree
+
+def insert_instance_req(
+    iml: str,
+    tree: Tree,
+    instance_src: str,
+) -> tuple[str, Tree]:
+    if not (instance_src.startswith('(') and instance_src.endswith(')')):
+        instance_src = f'({instance_src})'
+    to_insert = f'instance {instance_src}'
+
+    file_end_row = tree.root_node.end_point[0]
+
+    new_iml, new_tree = insert_lines(
+        iml,
+        tree,
+        lines=[to_insert],
+        insert_after=file_end_row,
+    )
+    return new_iml, new_tree
