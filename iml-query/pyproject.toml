@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "hongyu", email = "hongyu@imandra.ai" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "devtools>=0.12.2",
     "rich>=14.1.0",
@@ -14,10 +14,12 @@ dependencies = [
     "structlog>=25.4.0",
     "tree-sitter>=0.25.1",
     "tree-sitter-ocaml",
+    'iu-agents'
 ]
 
 [tool.uv.sources]
 tree-sitter-ocaml = { workspace = true }
+iu-agents = { path = "../../iu-agents" }
 
 [build-system]
 requires = ["hatchling"]
@@ -75,7 +77,7 @@ pycodestyle.ignore-overlong-task-comments = true
 isort.combine-as-imports = true
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/**/*.py" = ["F401", "RUF100", "D", "E402"]
+"scripts/**/*.py" = ["F401", "RUF100", "D", "E402", "B018"]
 
 [tool.ruff.format]
 quote-style = "single"
