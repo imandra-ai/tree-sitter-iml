@@ -20,7 +20,7 @@ def run_query(
     code: str | bytes | None = None,
     node: Node | None = None,
 ) -> list[tuple[int, dict[str, list[Node]]]]:
-    """Run a Tree-sitter query on the given code.
+    """Run a Tree-sitter query on the given code or node.
 
     Return:
         A list of tuples where the first element is the pattern index and
@@ -111,13 +111,20 @@ OPAQUE_QUERY_SRC = r"""
 """
 
 # TODO:
-# [@@@import Mod_name, "path/to/file.iml"] (path import with explicit module name)
-# [@@@import Mod_name, "path/to/file.iml", Mod_name2] (same, with explicit extraction name)
-# [@@@import "path/to/file.iml"] (path import as module `File`)
-# [@@@import Mod_name, "findlib:foo.bar"] (import from ocamlfind library)
-# [@@@import Mod_name, "findlib:foo.bar", Mod_name2] (same, with explicit extraction name)
-# [@@@import Mod_name, "dune:foo.bar"] (import from dune library)
-# [@@@import Mod_name, "dune:foo.bar", Mod_name2] (same, with explicit extraction name)
+# (path import with explicit module name)
+# [@@@import Mod_name, "path/to/file.iml"]
+# (same, with explicit extraction name)
+# [@@@import Mod_name, "path/to/file.iml", Mod_name2]
+# (path import as module `File`)
+# [@@@import "path/to/file.iml"]
+# (import from ocamlfind library)
+# [@@@import Mod_name, "findlib:foo.bar"]
+# (same, with explicit extraction name)
+# [@@@import Mod_name, "findlib:foo.bar", Mod_name2]
+# (import from dune library)
+# [@@@import Mod_name, "dune:foo.bar"]
+# (same, with explicit extraction name)
+# [@@@import Mod_name, "dune:foo.bar", Mod_name2]
 
 GENERAL_IMPORT_QUERY_SRC = r"""
 (floating_attribute
