@@ -386,23 +386,26 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
 
 @overload
 def delete_nodes(
-    nodes: list[Node],
     iml: str,
     old_tree: Tree,
+    *,
+    nodes: list[Node],
 ) -> tuple[str, Tree]: ...
 
 
 @overload
 def delete_nodes(
-    nodes: list[Node],
     iml: str,
+    *,
+    nodes: list[Node],
 ) -> tuple[str, None]: ...
 
 
 def delete_nodes(
-    nodes: list[Node],
     iml: str,
     old_tree: Tree | None = None,
+    *,
+    nodes: list[Node],
 ) -> tuple[str, Tree | None]:
     """Delete nodes from IML string and return updated string and tree.
 
@@ -492,7 +495,7 @@ def extract_verify_reqs(
         nodes_to_delete.append(verify_statement_node)
         reqs.append(verify_node_to_req(verify_statement_node))
 
-    new_iml, new_tree = delete_nodes(nodes_to_delete, iml, tree)
+    new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)
     return new_iml, new_tree, reqs
 
 
@@ -513,7 +516,7 @@ def extract_instance_reqs(
         nodes_to_delete.append(instance_statement_node)
         reqs.append(instance_node_to_req(instance_statement_node))
 
-    new_iml, new_tree = delete_nodes(nodes_to_delete, iml, tree)
+    new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)
     return new_iml, new_tree, reqs
 
 
@@ -543,7 +546,7 @@ def extract_decomp_reqs(
         req |= req_labels
         reqs.append(req)
 
-    new_iml, new_tree = delete_nodes(nodes_to_delete, iml, tree)
+    new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)
     return new_iml, new_tree, reqs
 
 

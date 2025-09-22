@@ -60,6 +60,7 @@ select = [
     "D",   # pydocstyle
 ]
 ignore = [
+    "SIM102",
     "SIM108", # if-else-block-instead-of-if-exp
     "N801",   # Class name should use CapWords
     # "PTH123", # `open()` should be replaced by `Path.open()`
