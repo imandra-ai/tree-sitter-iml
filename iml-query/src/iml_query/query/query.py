@@ -169,6 +169,31 @@ IMPORT_3_QUERY_SRC = r"""
 ) @import
 """
 
+VALUE_DEFINITION_QUERY_SRC = r"""
+(value_definition
+    (let_binding
+        (value_name) @function_name
+    )
+) @function_definition
+"""
+
+
+def find_func_definition(tree: Tree, function_name: str) -> Node | None:
+    matches = run_query(
+        mk_query(VALUE_DEFINITION_QUERY_SRC),
+        node=tree.root_node,
+    )
+
+    func_def: Node | None = None
+    for _, capture in matches:
+        function_name_node = capture['function_name'][0]
+        function_name_rhs = unwrap_byte(function_name_node.text).decode('utf-8')
+        if function_name_rhs == function_name:
+            func_def = capture['function_definition'][0]
+            break
+
+    return func_def
+
 
 def verify_node_to_req(node: Node) -> dict[str, str]:
     """Extract ImandraX request from a verify statement node."""
@@ -369,6 +394,44 @@ def top_application_to_decomp(node: Node) -> dict[str, Any]:
     return res
 
 
+def decomp_req_to_top_appl_text(req: dict[str, Any]) -> str:
+    """Convert a decomp request to a top application source string."""
+
+    def mk_id(identifier_name: str) -> str:
+        return f'[%id {identifier_name}]'
+
+    labels: list[str] = []
+    for k, v in req.items():
+        if k == 'assuming':
+            if len(v) == 0:
+                continue
+            labels.append(f'~assuming:{mk_id(v[0])}')
+        if k == 'basis':
+            if len(v) == 0:
+                continue
+            s = '~basis:'
+            items_str = ' ; '.join(map(mk_id, v))
+            s += f'[{items_str}]'
+            labels.append(s)
+        if k == 'rule_specs':
+            if len(v) == 0:
+                continue
+            s = '~rule_specs:'
+            items_str = ' ; '.join(map(mk_id, v))
+            s += f'[{items_str}]'
+            labels.append(s)
+        if k == 'prune':
+            if v:
+                labels.append(f'~prune:{"true" if v else "false"}')
+        if k == 'ctx_simp':
+            labels.append(f'~ctx_simp:{"true" if v else "false"}')
+        if k == 'lift_bool':
+            s = '~lift_bool:'
+            s += f'{v} ()'
+
+    return f'top {" ".join(labels) + " "}()]'
+
+
 def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
     assert node.type == 'attribute_payload'
 
@@ -434,8 +497,18 @@ def delete_nodes(
                 f'{sorted_edits[i + 1]}'
             )
 
+    # Apply deletions to text in reverse order to avoid offset issues
+    edits_reversed = sorted(edits, key=lambda x: x[0], reverse=True)
+    iml_b = bytes(iml, encoding='utf8')
+    for start, end in edits_reversed:
+        iml_b = iml_b[:start] + iml_b[end:]
+    iml = iml_b.decode('utf8')
+
+    # Get new tree
     # Apply tree edits if we have an old tree
     if old_tree is not None:
+        old_tree = old_tree.copy()
+
         # Sort nodes by start position for tree editing
         sorted_nodes = sorted(nodes, key=lambda x: x.start_byte)
 
@@ -450,21 +523,86 @@ def delete_nodes(
                 new_end_point=node.start_point,
             )
 
-    # Apply deletions to text in reverse order to avoid offset issues
-    edits_reversed = sorted(edits, key=lambda x: x[0], reverse=True)
-    iml_b = bytes(iml, encoding='utf8')
-    for start, end in edits_reversed:
-        iml_b = iml_b[:start] + iml_b[end:]
-    iml = iml_b.decode('utf8')
-
-    # Get new tree
-    if old_tree is not None:
         parser = get_parser(ocaml=False)
         new_tree = parser.parse(iml_b, old_tree=old_tree)
     else:
         new_tree = None
 
     return iml, new_tree
+
+
+def insert_lines(
+    iml: str,
+    tree: Tree,
+    lines: list[str],
+    insert_after: int,
+) -> tuple[str, Tree]:
+    """Insert lines of code after the given line number.
+
+    # AI: this is implemented by AI
+
+    Arguments:
+        lines: list of lines to insert
+        iml: old IML code
+        tree: old parsed tree
+        insert_after: line number to insert after (0-based)
+
+    Return:
+        new IML code and new tree
+
+    """
+    if not lines:
+        return iml, tree
+
+    tree = tree.copy()
+
+    # Split into lines to find insertion point
+    iml_lines = iml.splitlines(keepends=True)
+
+    # Validate line number
+    if insert_after < 0 or insert_after >= len(iml_lines):
+        raise ValueError(
+            f'Line number {insert_after} out of range (0-{len(iml_lines) - 1})'
+        )
+
+    # Calculate byte position for insertion
+    # Find the end of the line we're inserting after
+    lines_before = iml_lines[: insert_after + 1]
+    insert_byte_pos = sum(len(line.encode('utf-8')) for line in lines_before)
+
+    # Prepare the text to insert (ensure lines end with newlines)
+    insert_text = '\n'.join(lines)
+    if not insert_text.endswith('\n'):
+        insert_text += '\n'
+
+    insert_bytes = insert_text.encode('utf-8')
+    insert_length = len(insert_bytes)
+
+    # Apply tree edit
+    tree.edit(
+        start_byte=insert_byte_pos,
+        old_end_byte=insert_byte_pos,  # Insertion: old_end = start
+        new_end_byte=insert_byte_pos + insert_length,
+        start_point=(insert_after + 1, 0),  # Start of next line
+        old_end_point=(insert_after + 1, 0),  # Insertion: old_end = start
+        new_end_point=(
+            insert_after + 1 + len(lines),
+            0,
+        ),  # After inserted lines
+    )
+
+    # Apply text insertion
+    iml_bytes = iml.encode('utf-8')
+    new_iml_bytes = (
+        iml_bytes[:insert_byte_pos] + insert_bytes + iml_bytes[insert_byte_pos:]
+    )
+    new_iml = new_iml_bytes.decode('utf-8')
+
+    # Parse new tree
+    parser = get_parser(ocaml=False)
+    new_tree = parser.parse(new_iml_bytes, old_tree=tree)
+
+    return new_iml, new_tree
 
 
 def extract_opaque_function_names(iml: str) -> list[str]:
@@ -558,3 +696,49 @@ def iml_outline(iml: str) -> dict[str, Any]:
     outline['decompose_req'] = extract_decomp_reqs(iml, tree)[2]
     outline['opaque_function'] = extract_opaque_function_names(iml)
     return outline
+
+
+def insert_decomp_req(
+    iml: str,
+    tree: Tree,
+    req: dict[str, Any],
+) -> tuple[str, Tree]:
+    func_def_node = find_func_definition(tree, req['name'])
+    if func_def_node is None:
+        raise ValueError(f'Function {req["name"]} not found in syntax tree')
+
+    func_def_end_row = func_def_node.end_point[0]
+
+    top_appl_text = decomp_req_to_top_appl_text(req)
+    to_insert = f'[@@decomp {top_appl_text}]'
+
+    new_iml, new_tree = insert_lines(
+        iml,
+        tree,
+        lines=[to_insert],
+        insert_after=func_def_end_row,
+    )
+    return new_iml, new_tree
+
+
+# def insert_verify_req(
+#     iml: str,
+#     tree: Tree,
+#     req: dict[str, Any],
+# ) -> tuple[str, Tree]:
+#     func_def_node = find_func_definition(tree, req['name'])
+#     if func_def_node is None:
+#         raise ValueError(f'Function {req["name"]} not found in syntax tree')
+
+#     func_def_end_row = func_def_node.end_point[0]
+
+#     top_appl_text = decomp_req_to_top_appl_text(req)
+#     to_insert = f'[@@decomp {top_appl_text}]'
+
+#     new_iml, new_tree = insert_lines(
+#         iml,
+#         tree,
+#         lines=[to_insert],
+#         insert_after=func_def_end_row,
+#     )
+#     return new_iml, new_tree
