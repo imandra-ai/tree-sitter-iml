@@ -3,9 +3,11 @@ from inline_snapshot import snapshot
 from iml_query.query.query import (
     decomp_req_to_top_appl_text,
     extract_decomp_reqs,
+    extract_verify_reqs,
     find_func_definition,
     insert_decomp_req,
     insert_lines,
+    insert_verify_req,
 )
 from iml_query.tree_sitter_utils import get_parser
 
@@ -117,3 +119,77 @@ def test_manipualtion_decomp():
 
     # %%
     assert iml3 == iml4
+
+
+def test_manipulation_verify():
+    iml = """\
+let add_one (x: int) : int = x + 1
+
+let is_positive (x: int) : bool = x > 0
+
+let double (x: int) : int = x * 2
+
+verify (fun x -> x > 0 ==> double x > x)
+
+let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
+
+verify double_non_negative_is_increasing\
+"""
+    parser = get_parser(ocaml=False)
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    # %%
+    iml2, tree2, verify_reqs = extract_verify_reqs(iml, tree)
+    assert verify_reqs == snapshot(
+        [
+            {'src': 'fun x -> x > 0 ==> double x > x'},
+            {'src': 'double_non_negative_is_increasing'},
+        ]
+    )
+
+    # %%
+    assert iml2 == snapshot("""\
+let add_one (x: int) : int = x + 1
+
+let is_positive (x: int) : bool = x > 0
+
+let double (x: int) : int = x * 2
+
+
+
+let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
+
+""")
+
+    # %%
+    iml3, _tree3 = insert_verify_req(iml2, tree2, verify_reqs[0]['src'])
+    assert iml3 == snapshot("""\
+let add_one (x: int) : int = x + 1
+
+let is_positive (x: int) : bool = x > 0
+
+let double (x: int) : int = x * 2
+
+
+
+let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
+
+verify (fun x -> x > 0 ==> double x > x)
+""")
+
+    # %%
+    iml4, _tree4 = insert_verify_req(iml3, tree2, verify_reqs[1]['src'])
+    assert iml4 == snapshot("""\
+let add_one (x: int) : int = x + 1
+
+let is_positive (x: int) : bool = x > 0
+
+let double (x: int) : int = x * 2
+
+
+
+let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
+
+verify (fun x -> x > 0 ==> double x > x)
+verify (double_non_negative_is_increasing)
+""")
