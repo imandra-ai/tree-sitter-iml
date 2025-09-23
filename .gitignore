@@ -47,3 +47,5 @@ __pycache__
 *.tree
 
 .spec-workflow/
+
+*local*
