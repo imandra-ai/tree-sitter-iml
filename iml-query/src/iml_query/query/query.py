@@ -17,6 +17,7 @@ def mk_query(query_src: str) -> Query:
 
 def run_query(
     query: Query,
+    *,
     code: str | bytes | None = None,
     node: Node | None = None,
 ) -> list[tuple[int, dict[str, list[Node]]]]:
@@ -54,6 +55,32 @@ def unwrap_byte(node_text: bytes | None) -> bytes:
     if node_text is None:
         raise ValueError('Node text is None')
     return node_text
+
+
+def get_nesting_relationship(nested_node: Node, top_level_node: Node) -> int:
+    """Get nesting relationship between two nodes.
+
+    Returns:
+        -1: nested_node is not contained within top_level_node
+         0: nested_node is the same as top_level_node
+         n > 0: nested_node is nested within top_level_node at level n
+
+    """
+    if nested_node == top_level_node:
+        return 0
+
+    level = 0
+    current = nested_node.parent
+
+    while current:
+        if current == top_level_node:
+            return level
+        # Count let_expressions as nesting levels
+        if current.type == 'let_expression':
+            level += 1
+        current = current.parent
+
+    return -1  # Not an ancestor
 
 
 # =====
@@ -193,6 +220,119 @@ def find_func_definition(tree: Tree, function_name: str) -> Node | None:
             break
 
     return func_def
+
+
+def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
+    """Find nested measures.
+
+    Reurns:
+        list of dicts with keys:
+            function_name: name of top-level function
+            level: nesting level of top-level function
+            node: top-level function node
+            range: range of top-level function node
+            nested_measures: list of dicts with keys:
+                function_name: name of nested function
+                level: nesting level of nested function
+                node: nested function node
+                range: range of nested function node
+    """
+    # Query that finds both top-level functions and all functions with a measure
+    combined_query = mk_query(r"""
+    ; Find top-level functions
+    (compilation_unit
+        (value_definition
+            (let_binding
+                pattern: (value_name) @top_func_name
+            )
+        ) @top_function
+    )
+
+    ; Find functions with a measure attribute
+    (value_definition
+        (let_binding
+            pattern: (value_name) @nested_func_name
+            (item_attribute
+                "[@@"
+                (attribute_id) @_measure_id
+                (#eq? @_measure_id "measure")
+            )
+        )
+    ) @nested_function
+    """)
+
+    matches = run_query(combined_query, node=root_node)
+
+    # Separate top-level functions from nested functions with measures
+    top_level_functions: list[dict[str, Any]] = []
+    nested_functions_with_measures: list[dict[str, Any]] = []
+
+    for pattern_idx, capture in matches:
+        if pattern_idx == 0:  # Top-level function pattern
+            func_def = capture['top_function'][0]
+            func_name = unwrap_byte(capture['top_func_name'][0].text).decode(
+                'utf-8'
+            )
+            top_level_functions.append(
+                {
+                    'name': func_name,
+                    'node': func_def,
+                    'range': func_def.range,
+                }
+            )
+        elif pattern_idx == 1:  # Nested function with measure pattern
+            nested_func = capture['nested_function'][0]
+            nested_name = unwrap_byte(
+                capture['nested_func_name'][0].text
+            ).decode('utf-8')
+            nested_functions_with_measures.append(
+                {
+                    'name': nested_name,
+                    'node': nested_func,
+                    'range': nested_func.range,
+                }
+            )
+
+    # Now match nested functions to their containing top-level functions
+    problematic_functions: list[dict[str, Any]] = []
+
+    for top_func_info in top_level_functions:
+        top_func_node = top_func_info['node']
+        nested_measures: list[dict[str, Any]] = []
+
+        for nested_info in nested_functions_with_measures:
+            nested_node = nested_info['node']
+
+            # Get nesting relationship in a single traversal
+            nesting_level = get_nesting_relationship(nested_node, top_func_node)
+
+            # Only include if it's truly nested (level > 0)
+            if nesting_level > 0:
+                nested_measures.append(
+                    {
+                        'function_name': nested_info['name'],
+                        'level': nesting_level,
+                        'range': nested_info['range'],
+                        'node': nested_node,
+                    }
+                )
+
+        if nested_measures:
+            problematic_functions.append(
+                {
+                    'top_level_function_name': top_func_info['name'],
+                    'node': top_func_info['node'],
+                    'range': top_func_info['range'],
+                    'nested_measures': nested_measures,
+                }
+            )
+
+    return problematic_functions
+
+
+# =====
+# Post-processing
+# =====
 
 
 def verify_node_to_req(node: Node) -> dict[str, str]:
@@ -607,7 +747,10 @@ def insert_lines(
 
 def extract_opaque_function_names(iml: str) -> list[str]:
     opaque_functions: list[str] = []
-    matches = run_query(mk_query(OPAQUE_QUERY_SRC), iml)
+    matches = run_query(
+        mk_query(OPAQUE_QUERY_SRC),
+        code=iml,
+    )
     for _, capture in matches:
         value_name_node = capture['func_name'][0]
         func_name = unwrap_byte(value_name_node.text).decode('utf-8')
