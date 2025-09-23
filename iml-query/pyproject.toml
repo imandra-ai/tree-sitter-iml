@@ -14,7 +14,6 @@ dependencies = [
     "structlog>=25.4.0",
     "tree-sitter>=0.25.1",
     "tree-sitter-ocaml",
-    'iu-agents'
 ]
 
 [tool.uv.sources]
@@ -29,6 +28,7 @@ build-backend = "hatchling.build"
 dev = [
     "inline-snapshot>=0.28.0",
     "ipykernel>=6.30.1",
+    "iu-agents>=0.1.0",
     "pdbpp>=0.11.7",
     "pytest>=8.4.2",
 ]
