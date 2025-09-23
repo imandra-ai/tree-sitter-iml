@@ -1,3 +1,4 @@
+# pyright: basic
 from inline_snapshot import snapshot
 
 from iml_query.processing import (
@@ -9,6 +10,21 @@ from iml_query.processing import (
     insert_verify_req,
 )
 from iml_query.tree_sitter_utils import get_parser, insert_lines
+
+from inline_snapshot import snapshot
+
+from iml_query.queries import (
+    DECOMP_QUERY_SRC,
+    VERIFY_QUERY_SRC,
+)
+from iml_query.tree_sitter_utils import (
+    delete_nodes,
+    get_nesting_relationship,
+    get_parser,
+    mk_query,
+    run_query,
+    unwrap_byte,
+)
 
 
 def test_manipualtion_decomp():
@@ -192,3 +208,85 @@ let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
 verify (fun x -> x > 0 ==> double x > x)
 verify (double_non_negative_is_increasing)
 """)
+
+
+
+
+def test_delete_nodes_multiple():
+    """Test deleting multiple nodes from IML code."""
+    iml = """\
+let add_one (x: int) : int = x + 1
+
+verify (fun x -> x > 0 ==> double x > x)
+
+let is_positive (x: int) : bool = x > 0
+
+verify double_non_negative_is_increasing
+
+let double (x: int) : int = x * 2
+
+verify (fun y -> y < 0 ==> double y < y)
+"""
+    parser = get_parser(ocaml=False)
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    # Find all verify statements
+    matches = run_query(mk_query(VERIFY_QUERY_SRC), node=tree.root_node)
+    verify_nodes = [capture['verify'][0] for _, capture in matches]
+
+    # Delete all verify statements
+    new_iml, _new_tree = delete_nodes(iml, tree, nodes=verify_nodes)
+    assert new_iml == snapshot("""\
+let add_one (x: int) : int = x + 1
+
+
+
+let is_positive (x: int) : bool = x > 0
+
+
+
+let double (x: int) : int = x * 2
+
+
+""")
+
+
+def test_delete_nodes_single():
+    """Test deleting a single node."""
+    iml = """\
+let simple_branch x =
+  if x = 1 || x = 2 then x + 1 else x - 1
+[@@decomp top ()]
+
+let f x = x + 1
+"""
+    parser = get_parser(ocaml=False)
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    # Find decomp attribute
+    matches = run_query(mk_query(DECOMP_QUERY_SRC), node=tree.root_node)
+    decomp_attr = matches[0][1]['decomp_attr'][0]
+
+    # Delete the decomp attribute
+    new_iml, _new_tree = delete_nodes(iml, tree, nodes=[decomp_attr])
+    assert new_iml == snapshot("""\
+let simple_branch x =
+  if x = 1 || x = 2 then x + 1 else x - 1
+
+
+let f x = x + 1
+""")
+
+
+def test_delete_nodes_empty_list():
+    """Test delete_nodes with empty list."""
+    iml = """\
+let f x = x + 1
+let g y = y * 2
+"""
+    parser = get_parser(ocaml=False)
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    # Delete no nodes
+    new_iml, _new_tree = delete_nodes(iml, tree, nodes=[])
+    assert new_iml == iml  # Should be unchanged
