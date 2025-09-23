@@ -1,9 +1,7 @@
 from inline_snapshot import snapshot
 from rich.pretty import Pretty
 
-from iml_query.query.query import (
-    find_nested_measures,
-)
+from iml_query.processing import find_nested_measures
 from iml_query.tree_sitter_utils import get_parser
 from iml_query.utils import get_rich_str
 

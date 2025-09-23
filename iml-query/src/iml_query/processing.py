@@ -1,208 +1,26 @@
-from typing import Any, cast, overload
+"""Post-processing and manipulation functions for IML queries."""
 
-import structlog
-from tree_sitter import Node, Query, QueryCursor, Tree
+from typing import Any
 
-from iml_query.tree_sitter_utils import get_language, get_parser
+from tree_sitter import Node, Tree
 
-logger = structlog.get_logger(__name__)
-
-iml_language = get_language(ocaml=False)
-
-
-def mk_query(query_src: str) -> Query:
-    """Create a Tree-sitter query from the given source."""
-    return Query(iml_language, query_src)
-
-
-def run_query(
-    query: Query,
-    *,
-    code: str | bytes | None = None,
-    node: Node | None = None,
-) -> list[tuple[int, dict[str, list[Node]]]]:
-    """Run a Tree-sitter query on the given code or node.
-
-    Return:
-        A list of tuples where the first element is the pattern index and
-        the second element is a dictionary that maps capture names to nodes.
-
-    """
-    if code is None == node is None:
-        raise ValueError('Exactly one of code or node must be provided')
-
-    if code is not None:
-        if isinstance(code, str):
-            code = bytes(code, 'utf8')
-
-        parser = get_parser(ocaml=False)
-        tree = parser.parse(code)
-
-        node = tree.root_node
-
-    node = cast(Node, node)
-
-    cursor = QueryCursor(query=query)
-    return cursor.matches(node)
-
-
-def group_captures(captures: dict[str, list[Node]]) -> dict[str, list[Node]]:
-    """Group captures by their names."""
-    return {name: nodes for name, nodes in captures.items() if name}
-
-
-def unwrap_byte(node_text: bytes | None) -> bytes:
-    if node_text is None:
-        raise ValueError('Node text is None')
-    return node_text
-
-
-def get_nesting_relationship(nested_node: Node, top_level_node: Node) -> int:
-    """Get nesting relationship between two nodes.
-
-    Returns:
-        -1: nested_node is not contained within top_level_node
-         0: nested_node is the same as top_level_node
-         n > 0: nested_node is nested within top_level_node at level n
-
-    """
-    if nested_node == top_level_node:
-        return 0
-
-    level = 0
-    current = nested_node.parent
-
-    while current:
-        if current == top_level_node:
-            return level
-        # Count let_expressions as nesting levels
-        if current.type == 'let_expression':
-            level += 1
-        current = current.parent
-
-    return -1  # Not an ancestor
-
-
-# =====
-# Queries and node transformation
-# =====
-
-
-VERIFY_QUERY_SRC = r"""
-(verify_statement) @verify
-"""
-
-INSTANCE_QUERY_SRC = r"""
-(instance_statement) @instance
-"""
-
-AXIOM_QUERY_SRC = r"""
-(axiom_definition) @axiom
-"""
-
-THEOREM_QUERY_SRC = r"""
-(theorem_definition) @theorem
-"""
-
-LEMMA_QUERY_SRC = r"""
-(lemma_definition) @lemma
-"""
-
-DECOMP_QUERY_SRC = r"""
-(value_definition
-    (let_binding
-        (value_name) @decomposed_func_name
-        (item_attribute
-            (attribute_id) @_decomp_id
-            (attribute_payload) @decomp_payload
-            (#eq? @_decomp_id "decomp")
-        ) @decomp_attr
-    )
+from iml_query.queries import (
+    DECOMP_QUERY_SRC,
+    INSTANCE_QUERY_SRC,
+    OPAQUE_QUERY_SRC,
+    VALUE_DEFINITION_QUERY_SRC,
+    VERIFY_QUERY_SRC,
 )
-"""
 
-EVAL_QUERY_SRC = r"""
-(eval_statement) @eval
-"""
-
-OPAQUE_QUERY_SRC = r"""
-(value_definition
-    (let_binding
-        (value_name) @func_name
-        (item_attribute
-            (attribute_id) @attribute_id
-            (#eq? @attribute_id "opaque")
-        ) @item_attr
-    )
-) @full_def
-"""
-
-# TODO:
-# (path import with explicit module name)
-# [@@@import Mod_name, "path/to/file.iml"]
-# (same, with explicit extraction name)
-# [@@@import Mod_name, "path/to/file.iml", Mod_name2]
-# (path import as module `File`)
-# [@@@import "path/to/file.iml"]
-# (import from ocamlfind library)
-# [@@@import Mod_name, "findlib:foo.bar"]
-# (same, with explicit extraction name)
-# [@@@import Mod_name, "findlib:foo.bar", Mod_name2]
-# (import from dune library)
-# [@@@import Mod_name, "dune:foo.bar"]
-# (same, with explicit extraction name)
-# [@@@import Mod_name, "dune:foo.bar", Mod_name2]
-
-GENERAL_IMPORT_QUERY_SRC = r"""
-(floating_attribute
-    "[@@@"
-    (attribute_id) @attribute_id
-    (#eq? @attribute_id "import")
-) @import
-"""
-
-IMPORT_1_QUERY_SRC = r"""
-(floating_attribute
-    "[@@@"
-    (attribute_id) @attribute_id
-    (#eq? @attribute_id "import")
-    (attribute_payload
-        (expression_item
-            (tuple_expression
-                (constructor_path
-                    (constructor_name) @import_name
-                )
-                (string
-                    (string_content) @import_path
-                )
-            )
-        )
-    )
-) @import
-"""
-
-IMPORT_3_QUERY_SRC = r"""
-(floating_attribute
-    "[@@@"
-    (attribute_id) @attribute_id
-    (#eq? @attribute_id "import")
-    (attribute_payload
-        (expression_item
-            (string
-                (string_content) @import_path
-            )
-        )
-    )
-) @import
-"""
-
-VALUE_DEFINITION_QUERY_SRC = r"""
-(value_definition
-    (let_binding
-        (value_name) @function_name
-    )
-) @function_definition
-"""
+from .tree_sitter_utils import (
+    delete_nodes,
+    get_nesting_relationship,
+    get_parser,
+    insert_lines,
+    mk_query,
+    run_query,
+    unwrap_byte,
+)
 
 
 def find_func_definition(tree: Tree, function_name: str) -> Node | None:
@@ -330,11 +148,6 @@ def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
     return problematic_functions
 
 
-# =====
-# Post-processing
-# =====
-
-
 def verify_node_to_req(node: Node) -> dict[str, str]:
     """Extract ImandraX request from a verify statement node."""
     req: dict[str, str] = {}
@@ -422,7 +235,7 @@ def top_application_to_decomp(node: Node) -> dict[str, Any]:
     matches = run_query(query=extract_top_arg_query, node=node)
     # print(f'Found {len(matches)} labeled arguments')
 
-    # print(f'Matches: \n{matches}')
+    # print(f'Matches: \\n{matches}')
 
     res: dict[str, Any] = {}
 
@@ -580,169 +393,6 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
         raise NotImplementedError('Composition operators are not supported yet')
 
     return top_application_to_decomp(expect_appl)
-
-
-# ======
-# Extract
-# ======
-
-
-@overload
-def delete_nodes(
-    iml: str,
-    old_tree: Tree,
-    *,
-    nodes: list[Node],
-) -> tuple[str, Tree]: ...
-
-
-@overload
-def delete_nodes(
-    iml: str,
-    *,
-    nodes: list[Node],
-) -> tuple[str, None]: ...
-
-
-def delete_nodes(
-    iml: str,
-    old_tree: Tree | None = None,
-    *,
-    nodes: list[Node],
-) -> tuple[str, Tree | None]:
-    """Delete nodes from IML string and return updated string and tree.
-
-    Return new tree if old_tree is provided.
-
-    Arguments:
-        nodes: list of nodes to delete
-        iml: old IML code
-        old_tree: old parsed tree
-
-    """
-    if not nodes:
-        return iml, old_tree
-
-    # Extract byte ranges from nodes
-    edits = [node.byte_range for node in nodes]
-
-    # Check for overlapping edits
-    sorted_edits = sorted(edits, key=lambda x: x[0])
-    for i in range(len(sorted_edits) - 1):
-        curr_end = sorted_edits[i][1]
-        next_start = sorted_edits[i + 1][0]
-        if curr_end > next_start:
-            raise ValueError(
-                f'Overlapping nodes: positions {sorted_edits[i]} and '
-                f'{sorted_edits[i + 1]}'
-            )
-
-    # Apply deletions to text in reverse order to avoid offset issues
-    edits_reversed = sorted(edits, key=lambda x: x[0], reverse=True)
-    iml_b = bytes(iml, encoding='utf8')
-    for start, end in edits_reversed:
-        iml_b = iml_b[:start] + iml_b[end:]
-    iml = iml_b.decode('utf8')
-
-    # Get new tree
-    # Apply tree edits if we have an old tree
-    if old_tree is not None:
-        old_tree = old_tree.copy()
-
-        # Sort nodes by start position for tree editing
-        sorted_nodes = sorted(nodes, key=lambda x: x.start_byte)
-
-        # Apply tree edits in forward order
-        for node in sorted_nodes:
-            old_tree.edit(
-                start_byte=node.start_byte,
-                old_end_byte=node.end_byte,
-                new_end_byte=node.start_byte,
-                start_point=node.start_point,
-                old_end_point=node.end_point,
-                new_end_point=node.start_point,
-            )
-
-        parser = get_parser(ocaml=False)
-        new_tree = parser.parse(iml_b, old_tree=old_tree)
-    else:
-        new_tree = None
-
-    return iml, new_tree
-
-
-def insert_lines(
-    iml: str,
-    tree: Tree,
-    lines: list[str],
-    insert_after: int,
-) -> tuple[str, Tree]:
-    """Insert lines of code after the given line number.
-
-    # AI: this is implemented by AI
-
-    Arguments:
-        lines: list of lines to insert
-        iml: old IML code
-        tree: old parsed tree
-        insert_after: line number to insert after (0-based)
-
-    Return:
-        new IML code and new tree
-
-    """
-    if not lines:
-        return iml, tree
-
-    tree = tree.copy()
-
-    # Split into lines to find insertion point
-    iml_lines = iml.splitlines(keepends=True)
-
-    # Validate line number
-    if insert_after < 0 or insert_after > len(iml_lines):
-        raise ValueError(
-            f'Line number {insert_after} out of range (0-{len(iml_lines) - 1})'
-        )
-
-    # Calculate byte position for insertion
-    # Find the end of the line we're inserting after
-    lines_before = iml_lines[: insert_after + 1]
-    insert_byte_pos = sum(len(line.encode('utf-8')) for line in lines_before)
-
-    # Prepare the text to insert (ensure lines end with newlines)
-    insert_text = '\n'.join(lines)
-    if not insert_text.endswith('\n'):
-        insert_text += '\n'
-
-    insert_bytes = insert_text.encode('utf-8')
-    insert_length = len(insert_bytes)
-
-    # Apply tree edit
-    tree.edit(
-        start_byte=insert_byte_pos,
-        old_end_byte=insert_byte_pos,  # Insertion: old_end = start
-        new_end_byte=insert_byte_pos + insert_length,
-        start_point=(insert_after + 1, 0),  # Start of next line
-        old_end_point=(insert_after + 1, 0),  # Insertion: old_end = start
-        new_end_point=(
-            insert_after + 1 + len(lines),
-            0,
-        ),  # After inserted lines
-    )
-
-    # Apply text insertion
-    iml_bytes = iml.encode('utf-8')
-    new_iml_bytes = (
-        iml_bytes[:insert_byte_pos] + insert_bytes + iml_bytes[insert_byte_pos:]
-    )
-    new_iml = new_iml_bytes.decode('utf-8')
-
-    # Parse new tree
-    parser = get_parser(ocaml=False)
-    new_tree = parser.parse(new_iml_bytes, old_tree=tree)
-
-    return new_iml, new_tree
 
 
 def extract_opaque_function_names(iml: str) -> list[str]:

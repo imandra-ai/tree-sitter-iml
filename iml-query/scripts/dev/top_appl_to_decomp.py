@@ -6,12 +6,12 @@ from textwrap import indent
 
 import tree_sitter_ocaml
 from devtools import pformat, pprint, sprint
+from iml_query.format import format_treesitter_sexp
 from rich import print
 from rich.markup import escape
 from tree_sitter import Language, Node, Parser, Point, Query, QueryCursor
 
 from iml_query import fmt_node, get_parser
-from iml_query.format import format_treesitter_sexp
 from iml_query.query import (
     axiom_query,
     decomp_capture_to_req,

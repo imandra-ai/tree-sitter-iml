@@ -1,10 +1,7 @@
 import pytest
 from inline_snapshot import snapshot
 
-from iml_query.query.query import (
-    EVAL_QUERY_SRC,
-    INSTANCE_QUERY_SRC,
-    VERIFY_QUERY_SRC,
+from iml_query.processing import (
     eval_node_to_src,
     extract_decomp_reqs,
     extract_instance_reqs,
@@ -12,11 +9,14 @@ from iml_query.query.query import (
     iml_outline,
     insert_instance_req,
     instance_node_to_req,
-    mk_query,
-    run_query,
     verify_node_to_req,
 )
-from iml_query.tree_sitter_utils import get_parser
+from iml_query.queries import (
+    EVAL_QUERY_SRC,
+    INSTANCE_QUERY_SRC,
+    VERIFY_QUERY_SRC,
+)
+from iml_query.tree_sitter_utils import get_parser, mk_query, run_query
 
 
 def test_verify_node_to_req():
@@ -372,7 +372,7 @@ verify (fun ys ->
       i >= 0
 )
 """
-    from iml_query.query.query import (
+    from iml_query.processing import (
         extract_decomp_reqs,
         extract_instance_reqs,
         extract_opaque_function_names,

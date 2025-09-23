@@ -1,15 +1,14 @@
 from inline_snapshot import snapshot
 
-from iml_query.query.query import (
+from iml_query.processing import (
     decomp_req_to_top_appl_text,
     extract_decomp_reqs,
     extract_verify_reqs,
     find_func_definition,
     insert_decomp_req,
-    insert_lines,
     insert_verify_req,
 )
-from iml_query.tree_sitter_utils import get_parser
+from iml_query.tree_sitter_utils import get_parser, insert_lines
 
 
 def test_manipualtion_decomp():

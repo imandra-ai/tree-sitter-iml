@@ -1,16 +1,18 @@
 # pyright: basic
 from inline_snapshot import snapshot
 
-from iml_query.query.query import (
+from iml_query.queries import (
     DECOMP_QUERY_SRC,
     VERIFY_QUERY_SRC,
+)
+from iml_query.tree_sitter_utils import (
     delete_nodes,
     get_nesting_relationship,
+    get_parser,
     mk_query,
     run_query,
     unwrap_byte,
 )
-from iml_query.tree_sitter_utils import get_parser
 
 
 def test_delete_nodes_multiple():
