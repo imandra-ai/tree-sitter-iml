@@ -31,7 +31,7 @@ verify (
     let a, _ = (fulcrum_inner xs ys i) in a >= i
 )
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
     matches = run_query(mk_query(VERIFY_QUERY_SRC), node=tree.root_node)
 
@@ -63,7 +63,7 @@ instance (
     x * y < 100
 )
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
     matches = run_query(mk_query(INSTANCE_QUERY_SRC), node=tree.root_node)
 
@@ -98,7 +98,7 @@ eval (
   x + y
 )
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
     matches = run_query(mk_query(EVAL_QUERY_SRC), node=tree.root_node)
 
@@ -151,7 +151,7 @@ let double (x: int) : int = x * 2
 
 instance (fun x y -> x + y > 0 && x - y < 10)
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     new_iml, _new_tree, instance_reqs = extract_instance_reqs(iml, tree)
@@ -187,7 +187,7 @@ let is_positive (x: int) : bool = x > 0
 
 let double (x: int) : int = x * 2
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Insert first instance
@@ -298,7 +298,7 @@ let context_sensitive x y z =
 [@@decomp top ~ctx_simp:true ()]
 """
 
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
     _, _, decomp_reqs = extract_decomp_reqs(iml, tree)
 
@@ -343,7 +343,7 @@ let infeasible_branches x =
 [@@decomp top () |>> prune]
 """
 
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
     _, _, _decomp_reqs = extract_decomp_reqs(iml, tree)
 
@@ -379,7 +379,7 @@ verify (fun ys ->
         extract_verify_reqs,
     )
 
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Test each extraction function individually

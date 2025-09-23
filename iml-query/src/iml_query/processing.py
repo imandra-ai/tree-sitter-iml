@@ -154,7 +154,11 @@ def verify_node_to_req(node: Node) -> dict[str, str]:
     assert node.type == 'verify_statement', 'not verify_statement'
     assert node.text, 'None text'
     verify_src = (
-        node.text.decode('utf-8').strip().removeprefix('verify').strip()
+        unwrap_byte(node.text)
+        .decode('utf-8')
+        .strip()
+        .removeprefix('verify')
+        .strip()
     )
     # Remove parentheses
     if verify_src.startswith('(') and verify_src.endswith(')'):
@@ -170,7 +174,11 @@ def instance_node_to_req(node: Node) -> dict[str, str]:
     assert node.type == 'instance_statement', 'not instance_statement'
     assert node.text, 'None text'
     instance_src = (
-        node.text.decode('utf-8').strip().removeprefix('instance').strip()
+        unwrap_byte(node.text)
+        .decode('utf-8')
+        .strip()
+        .removeprefix('instance')
+        .strip()
     )
     # Remove parentheses
     if instance_src.startswith('(') and instance_src.endswith(')'):
@@ -183,7 +191,13 @@ def eval_node_to_src(node: Node) -> str:
     """Extract str from an eval statement node."""
     assert node.type == 'eval_statement', 'not eval_statement'
     assert node.text, 'None text'
-    src = node.text.decode('utf-8').strip().removeprefix('eval').strip()
+    src = (
+        unwrap_byte(node.text)
+        .decode('utf-8')
+        .strip()
+        .removeprefix('eval')
+        .strip()
+    )
     # Remove parentheses
     if src.startswith('(') and src.endswith(')'):
         src = src[1:-1].strip()
@@ -483,7 +497,7 @@ def extract_decomp_reqs(
 
 def iml_outline(iml: str) -> dict[str, Any]:
     outline: dict[str, Any] = {}
-    tree = get_parser(ocaml=False).parse(bytes(iml, encoding='utf8'))
+    tree = get_parser().parse(bytes(iml, encoding='utf8'))
     outline['verify_req'] = extract_verify_reqs(iml, tree)[2]
     outline['instance_req'] = extract_instance_reqs(iml, tree)[2]
     outline['decompose_req'] = extract_decomp_reqs(iml, tree)[2]

@@ -16,7 +16,10 @@ def get_language(ocaml: bool = False) -> Language:
     return Language(language_capsule)
 
 
-def get_parser(ocaml: bool = False) -> Parser:
+iml_language = get_language(ocaml=False)
+
+
+def create_parser(ocaml: bool = False) -> Parser:
     """Get a parser for the given language."""
     language = get_language(ocaml)
 
@@ -25,7 +28,14 @@ def get_parser(ocaml: bool = False) -> Parser:
     return parser
 
 
-iml_language = get_language(ocaml=False)
+_parser: Parser | None = None
+
+
+def get_parser() -> Parser:
+    global _parser
+    if _parser is None:
+        _parser = create_parser()
+    return _parser
 
 
 def mk_query(query_src: str) -> Query:
@@ -53,7 +63,7 @@ def run_query(
         if isinstance(code, str):
             code = bytes(code, 'utf8')
 
-        parser = get_parser(ocaml=False)
+        parser = create_parser(ocaml=False)
         tree = parser.parse(code)
 
         node = tree.root_node
@@ -177,7 +187,7 @@ def delete_nodes(
                 new_end_point=node.start_point,
             )
 
-        parser = get_parser(ocaml=False)
+        parser = create_parser(ocaml=False)
         new_tree = parser.parse(iml_b, old_tree=old_tree)
     else:
         new_tree = None
@@ -253,7 +263,7 @@ def insert_lines(
     new_iml = new_iml_bytes.decode('utf-8')
 
     # Parse new tree
-    parser = get_parser(ocaml=False)
+    parser = create_parser(ocaml=False)
     new_tree = parser.parse(new_iml_bytes, old_tree=tree)
 
     return new_iml, new_tree
@@ -293,7 +303,7 @@ def get_node_sexpr_with_leaf_text(
             if child_result:  # Only extend if child_result is not empty
                 result.extend(child_result)
     else:
-        text = node.text.decode('utf-8') if node.text else ''
+        text = unwrap_byte(node.text).decode('utf-8') if node.text else ''
         if text.strip():  # Only print non-empty text
             result.append(f"{indent}{node.type}: '{text}'")
         else:

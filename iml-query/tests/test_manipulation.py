@@ -1,4 +1,3 @@
-# pyright: basic
 from inline_snapshot import snapshot
 
 from iml_query.processing import (
@@ -43,7 +42,7 @@ def test_manipualtion_decomp():
     if x = 1 || x = 2 then x + 1 else x - 1
     [@@decomp top ~prune: true ()]\
     """  # noqa: E501
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # %%
@@ -150,7 +149,7 @@ let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
 
 verify double_non_negative_is_increasing\
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # %%
@@ -227,7 +226,7 @@ let double (x: int) : int = x * 2
 
 verify (fun y -> y < 0 ==> double y < y)
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Find all verify statements
@@ -260,7 +259,7 @@ let simple_branch x =
 
 let f x = x + 1
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Find decomp attribute
@@ -284,7 +283,7 @@ def test_delete_nodes_empty_list():
 let f x = x + 1
 let g y = y * 2
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Delete no nodes

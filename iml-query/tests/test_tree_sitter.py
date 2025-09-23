@@ -35,7 +35,7 @@ let triple_nested (f : int list) (i : int) (n : int) : int list =
 let top_level_function x = x + 1
 [@@measure Ordinal.of_int 1]
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Find all value definitions

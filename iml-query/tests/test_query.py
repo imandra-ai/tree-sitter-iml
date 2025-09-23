@@ -54,7 +54,7 @@ let rec helper curr_f curr_i =
 in
 helper f i\
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
     problematic_funcs = find_nested_measures(tree.root_node)
     assert len(problematic_funcs) == 2
@@ -126,7 +126,7 @@ let redundant_regions x =
   else 1
 [@@decomp ~| (top ())]
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Find all decomp attributes
@@ -162,7 +162,7 @@ def test_edge_cases_empty_content():
 (* This is just a comment *)
 (* Another comment *)
 """
-    parser = get_parser(ocaml=False)
+    parser = get_parser()
     tree = parser.parse(bytes(iml_comments, encoding='utf8'))
 
     # Should find no verify statements
