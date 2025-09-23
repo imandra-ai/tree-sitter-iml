@@ -1338,7 +1338,7 @@ async = [
 
 [[package]]
 name = "imandrax-api"
-version = "0.17"
+version = "0.16.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
@@ -1346,7 +1346,7 @@ dependencies = [
     { name = "structlog" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/c5/e289020a1d8fee7f4fbd212675fcb3c688474ac388a6feed2972ca54c7aa/imandrax_api-0.17-py3-none-any.whl", hash = "sha256:43f349b9c322ee02237444662e8f81e75b4d08ab9a27a7b5aca20776fb3912c3", size = 51490, upload-time = "2025-09-09T15:36:51.266Z" },
+    { url = "https://files.pythonhosted.org/packages/82/45/5e48ecc4380e45a8d62e60b2a99218ae43788190cc5c1ab0daaddf15ed4b/imandrax_api-0.16.1-py3-none-any.whl", hash = "sha256:f24ef05aa3ad93c7790c00819528113d046da8abd1c78014c9c37692f340c5e5", size = 50564, upload-time = "2025-08-05T19:05:49.867Z" },
 ]
 
 [package.optional-dependencies]
@@ -1597,7 +1597,7 @@ requires-dist = [
     { name = "google-cloud-logging", specifier = ">=3.11.3" },
     { name = "imageio", specifier = ">=2.36.1" },
     { name = "imandra", extras = ["async"] },
-    { name = "imandrax-api", extras = ["async"], specifier = ">=0.17.0" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.16.1,<0.17.0" },
     { name = "langchain-anthropic", specifier = ">=0.3.3" },
     { name = "langchain-community", specifier = ">=0.3.14" },
     { name = "langchain-google-vertexai", specifier = ">=2.0.13" },
