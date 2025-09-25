@@ -11,6 +11,8 @@ from iml_query.queries import (
     VALUE_DEFINITION_QUERY_SRC,
     VERIFY_QUERY_SRC,
     DecompCapture,
+    InstanceCapture,
+    VerifyCapture,
 )
 
 from .tree_sitter_utils import (
@@ -149,8 +151,9 @@ def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
     return problematic_functions
 
 
-def verify_node_to_req(node: Node) -> dict[str, str]:
+def verify_capture_to_req(capture: VerifyCapture) -> dict[str, str]:
     """Extract ImandraX request from a verify statement node."""
+    node = capture.verify
     req: dict[str, str] = {}
     assert node.type == 'verify_statement', 'not verify_statement'
     assert node.text, 'None text'
@@ -169,8 +172,9 @@ def verify_node_to_req(node: Node) -> dict[str, str]:
     return req
 
 
-def instance_node_to_req(node: Node) -> dict[str, str]:
+def instance_capture_to_req(capture: InstanceCapture) -> dict[str, str]:
     """Extract ImandraX request from an instance statement node."""
+    node = capture.instance
     req: dict[str, str] = {}
     assert node.type == 'instance_statement', 'not instance_statement'
     assert node.text, 'None text'
@@ -428,9 +432,10 @@ def extract_verify_reqs(
     nodes_to_delete: list[Node] = []
 
     for _, capture in matches:
-        verify_statement_node = capture['verify'][0]
+        capture = VerifyCapture.from_ts_capture(capture)
+        reqs.append(verify_capture_to_req(capture))
+        verify_statement_node = capture.verify
         nodes_to_delete.append(verify_statement_node)
-        reqs.append(verify_node_to_req(verify_statement_node))
 
     new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)
     return new_iml, new_tree, reqs
@@ -449,9 +454,10 @@ def extract_instance_reqs(
     nodes_to_delete: list[Node] = []
 
     for _, capture in matches:
-        instance_statement_node = capture['instance'][0]
+        capture = InstanceCapture.from_ts_capture(capture)
+        reqs.append(instance_capture_to_req(capture))
+        instance_statement_node = capture.instance
         nodes_to_delete.append(instance_statement_node)
-        reqs.append(instance_node_to_req(instance_statement_node))
 
     new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)
     return new_iml, new_tree, reqs

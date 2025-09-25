@@ -8,13 +8,15 @@ from iml_query.processing import (
     extract_opaque_function_names,
     iml_outline,
     insert_instance_req,
-    instance_node_to_req,
-    verify_node_to_req,
+    instance_capture_to_req,
+    verify_capture_to_req,
 )
 from iml_query.queries import (
     EVAL_QUERY_SRC,
     INSTANCE_QUERY_SRC,
     VERIFY_QUERY_SRC,
+    InstanceCapture,
+    VerifyCapture,
 )
 from iml_query.tree_sitter_utils import get_parser, mk_query, run_query
 
@@ -35,7 +37,10 @@ verify (
     tree = parser.parse(bytes(iml, encoding='utf8'))
     matches = run_query(mk_query(VERIFY_QUERY_SRC), node=tree.root_node)
 
-    reqs = [verify_node_to_req(capture['verify'][0]) for _, capture in matches]
+    reqs = [
+        verify_capture_to_req(VerifyCapture.from_ts_capture(capture))
+        for _, capture in matches
+    ]
     assert reqs == snapshot(
         [
             {'src': 'fun x -> x > 0 ==> double x > x'},
@@ -68,7 +73,8 @@ instance (
     matches = run_query(mk_query(INSTANCE_QUERY_SRC), node=tree.root_node)
 
     reqs = [
-        instance_node_to_req(capture['instance'][0]) for _, capture in matches
+        instance_capture_to_req(InstanceCapture.from_ts_capture(capture))
+        for _, capture in matches
     ]
     assert reqs == snapshot(
         [

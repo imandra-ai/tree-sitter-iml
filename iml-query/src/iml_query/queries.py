@@ -23,9 +23,21 @@ VERIFY_QUERY_SRC = r"""
 (verify_statement) @verify
 """
 
+
+@dataclass(slots=True, frozen=True)
+class VerifyCapture(BaseCapture):
+    verify: Node
+
+
 INSTANCE_QUERY_SRC = r"""
 (instance_statement) @instance
 """
+
+
+@dataclass(slots=True, frozen=True)
+class InstanceCapture(BaseCapture):
+    instance: Node
+
 
 AXIOM_QUERY_SRC = r"""
 (axiom_definition) @axiom
