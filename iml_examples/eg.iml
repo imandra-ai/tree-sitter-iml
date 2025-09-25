@@ -18,6 +18,26 @@ let square : int -> int = ()
 let cube : int -> int = ()
 [@@opaque]
 
+
+let build_fib (f : int list) (i : int) (n : int) : int list =
+  let rec helper curr_f curr_i =
+    if curr_i > n then
+      curr_f
+    else
+      match (List.nth (curr_i - 1) curr_f, List.nth (curr_i - 2) curr_f) with
+      | (Some prev1, Some prev2) ->
+          let new_f = curr_f @ [prev1 + prev2] in
+          helper new_f (curr_i + 1)
+      | _ -> curr_f
+  [@@measure Ordinal.of_int (n - curr_i)]
+  in
+  helper f i
+
+let good_measure x =
+  x + 1
+[@@measure Ordinal.of_int 1]
+
+
 axiom positive_addition x =
   x >= 0 ==> add_one x > x
 
