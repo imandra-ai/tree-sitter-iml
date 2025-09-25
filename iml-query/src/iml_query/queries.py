@@ -1,5 +1,20 @@
 """Query source strings and definitions for IML tree-sitter queries."""
 
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Self
+
+from tree_sitter import Node
+
+
+class BaseCapture:
+    @classmethod
+    def from_ts_capture(cls, capture: dict[str, list[Node]]) -> Self:
+        capture_: dict[str, Node] = {k: v[0] for k, v in capture.items()}
+        return cls(**capture_)
+
+
 VERIFY_QUERY_SRC = r"""
 (verify_statement) @verify
 """
@@ -37,17 +52,6 @@ EVAL_QUERY_SRC = r"""
 (eval_statement) @eval
 """
 
-OPAQUE_QUERY_SRC = r"""
-(value_definition
-    (let_binding
-        (value_name) @func_name
-        (item_attribute
-            (attribute_id) @attribute_id
-            (#eq? @attribute_id "opaque")
-        ) @item_attr
-    )
-) @full_def
-"""
 
 # TODO:
 # (path import with explicit module name)
@@ -115,3 +119,60 @@ VALUE_DEFINITION_QUERY_SRC = r"""
     )
 ) @function_definition
 """
+
+TOP_LEVEL_VALUE_DEFINITION_QUERY_SRC = r"""
+(compilation_unit
+    (value_definition
+        (let_binding
+            pattern: (value_name) @top_function_name
+        )
+    ) @top_function
+)
+"""
+
+
+@dataclass
+class TopDefCapture(BaseCapture):
+    top_function: Node
+    top_function_name: Node
+
+
+MEASURE_QUERY_SRC = r"""
+(value_definition
+    (let_binding
+        pattern: (value_name) @function_name
+        (item_attribute
+            "[@@"
+            (attribute_id) @_measure_id
+            (#eq? @_measure_id "measure")
+        ) @measure_attr
+    )
+) @function_definition
+"""
+
+
+@dataclass
+class MeasureCapture(BaseCapture):
+    function_definition: Node
+    function_name: Node
+    measure_attr: Node
+
+
+OPAQUE_QUERY_SRC = r"""
+(value_definition
+    (let_binding
+        (value_name) @function_name
+        (item_attribute
+            (attribute_id) @_opaque_id
+            (#eq? @_opaque_id "opaque")
+        ) @opaque_attr
+    )
+) @function_definition
+"""
+
+
+@dataclass
+class OpaqueCapture:
+    function_definition: Node
+    function_name: Node
+    measure_attr: Node

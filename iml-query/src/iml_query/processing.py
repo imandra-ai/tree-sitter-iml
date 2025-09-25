@@ -416,7 +416,7 @@ def extract_opaque_function_names(iml: str) -> list[str]:
         code=iml,
     )
     for _, capture in matches:
-        value_name_node = capture['func_name'][0]
+        value_name_node = capture['function_name'][0]
         func_name = unwrap_byte(value_name_node.text).decode('utf-8')
         opaque_functions.append(func_name)
 
