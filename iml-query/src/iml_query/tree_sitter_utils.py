@@ -143,6 +143,13 @@ def get_nesting_relationship(nested_node: Node, top_level_node: Node) -> int:
     if nested_node == top_level_node:
         return 0
 
+    # Early exit if the nested node is not contained within the top level node
+    if (
+        nested_node.end_byte < top_level_node.start_byte
+        or nested_node.start_byte > top_level_node.end_byte
+    ):
+        return -1
+
     level = 0
     current = nested_node.parent
 
@@ -154,7 +161,7 @@ def get_nesting_relationship(nested_node: Node, top_level_node: Node) -> int:
             level += 1
         current = current.parent
 
-    return -1  # Not an ancestor
+    return -1  # Range contains but not satisfies let structure
 
 
 @overload
