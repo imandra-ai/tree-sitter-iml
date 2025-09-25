@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Self
 
 from tree_sitter import Node
 
 
+@dataclass(frozen=True)
 class BaseCapture:
     @classmethod
     def from_ts_capture(cls, capture: dict[str, list[Node]]) -> Self:
         capture_: dict[str, Node] = {k: v[0] for k, v in capture.items()}
-        return cls(**capture_)
+
+        field_names = {f.name for f in fields(cls)}
+        filtered = {k: v for k, v in capture_.items() if k in field_names}
+        return cls(**filtered)
 
 
 VERIFY_QUERY_SRC = r"""
@@ -131,7 +135,7 @@ TOP_LEVEL_VALUE_DEFINITION_QUERY_SRC = r"""
 """
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class TopDefCapture(BaseCapture):
     top_function: Node
     top_function_name: Node
@@ -151,7 +155,7 @@ MEASURE_QUERY_SRC = r"""
 """
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class MeasureCapture(BaseCapture):
     function_definition: Node
     function_name: Node
@@ -171,8 +175,8 @@ OPAQUE_QUERY_SRC = r"""
 """
 
 
-@dataclass
-class OpaqueCapture:
+@dataclass(slots=True, frozen=True)
+class OpaqueCapture(BaseCapture):
     function_definition: Node
     function_name: Node
     measure_attr: Node
