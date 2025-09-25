@@ -10,6 +10,7 @@ from iml_query.queries import (
     OPAQUE_QUERY_SRC,
     VALUE_DEFINITION_QUERY_SRC,
     VERIFY_QUERY_SRC,
+    DecompCapture,
 )
 
 from .tree_sitter_utils import (
@@ -210,25 +211,6 @@ class DecompParsingError(Exception):
     pass
 
 
-def decomp_capture_to_req(capture: dict[str, list[Node]]) -> dict[str, str]:
-    """Extract ImandraX request from a decomp capture."""
-    req: dict[str, str] = {}
-
-    # Function name
-    func_name = capture['func_name'][0].text
-    assert func_name, 'No function name'
-    req['func_name'] = func_name.decode('utf-8')
-
-    # Decomp
-    decomp_payload_node = capture['attribute_payload'][0]
-    decomp_payload_b = decomp_payload_node.text
-    assert decomp_payload_b, 'No decomp payload'
-    req['decomp_payload'] = decomp_payload_b.decode('utf-8')
-
-    req = req
-    return req
-
-
 def top_application_to_decomp(node: Node) -> dict[str, Any]:
     """Extract Decomp request request from a top application node."""
     assert node.type == 'application_expression'
@@ -409,6 +391,16 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
     return top_application_to_decomp(expect_appl)
 
 
+def decomp_capture_to_req(capture: DecompCapture) -> dict[str, Any]:
+    req: dict[str, Any] = {}
+    req['name'] = unwrap_byte(capture.decomposed_func_name.text).decode('utf8')
+    req_labels = decomp_attribute_payload_to_decomp_req_labels(
+        capture.decomp_payload
+    )
+    req |= req_labels
+    return req
+
+
 def extract_opaque_function_names(iml: str) -> list[str]:
     opaque_functions: list[str] = []
     matches = run_query(
@@ -478,17 +470,11 @@ def extract_decomp_reqs(
     nodes_to_delete: list[Node] = []
 
     for _, capture in matches:
-        decomp_attr_node = capture['decomp_attr'][0]
-        nodes_to_delete.append(decomp_attr_node)
+        capture = DecompCapture.from_ts_capture(capture)
 
-        req: dict[str, Any] = {}
-        req['name'] = unwrap_byte(
-            capture['decomposed_func_name'][0].text
-        ).decode('utf8')
-        req_labels = decomp_attribute_payload_to_decomp_req_labels(
-            capture['decomp_payload'][0]
-        )
-        req |= req_labels
+        decomp_attr_node = capture.decomp_attr
+        nodes_to_delete.append(decomp_attr_node)
+        req = decomp_capture_to_req(capture)
         reqs.append(req)
 
     new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)

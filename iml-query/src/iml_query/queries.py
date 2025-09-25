@@ -52,6 +52,14 @@ DECOMP_QUERY_SRC = r"""
 )
 """
 
+
+@dataclass(slots=True, frozen=True)
+class DecompCapture(BaseCapture):
+    decomposed_func_name: Node
+    decomp_attr: Node
+    decomp_payload: Node
+
+
 EVAL_QUERY_SRC = r"""
 (eval_statement) @eval
 """
