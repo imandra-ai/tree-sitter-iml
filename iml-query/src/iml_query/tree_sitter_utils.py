@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import cast, overload
 
 import structlog
@@ -74,9 +75,54 @@ def run_query(
     return cursor.matches(node)
 
 
-def group_captures(captures: dict[str, list[Node]]) -> dict[str, list[Node]]:
-    """Group captures by their names."""
-    return {name: nodes for name, nodes in captures.items() if name}
+def merge_queries(queries: dict[str, str]) -> str:
+    """Merge multiple queries into one query.
+
+    Args:
+        queries (dict[str, str]): A dictionary of query names to queries.
+            Each query can only contains one pattern.
+
+    Returns:
+        str: The merged query.
+
+    """
+    s = ''
+    for name, query in queries.items():
+        if __debug__:
+            assert mk_query(query).pattern_count == 1, (
+                'expected exactly one pattern'
+            )
+        s += f'; {name}\n'
+        s += query
+        s += '\n\n'
+    return s
+
+
+def run_queries(
+    queries: dict[str, str],
+    node: Node,
+) -> dict[str, list[dict[str, list[Node]]]]:
+    """Run multiple queries.
+
+    Returns:
+    dict[str, list[dict[str, list[Node]]]]: A dictionary of query names to
+        a list of captures. Each capture is a dictionary of capture names to
+        capture values.
+
+    """
+    matches = run_query(
+        mk_query(merge_queries(queries)),
+        node=node,
+    )
+
+    # query name -> list of captures
+    captures_map: dict[str, list[dict[str, list[Node]]]] = defaultdict(list)
+    query_names = list(queries.keys())
+    for patten_idx, capture in matches:
+        query_name = query_names[patten_idx]
+        captures_map[query_name].append(capture)
+
+    return dict(captures_map)
 
 
 def unwrap_byte(node_text: bytes | None) -> bytes:
