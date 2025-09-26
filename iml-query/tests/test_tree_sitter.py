@@ -6,7 +6,7 @@ from iml_query.tree_sitter_utils import (
     get_parser,
     mk_query,
     run_query,
-    unwrap_byte,
+    unwrap_bytes,
 )
 
 
@@ -52,7 +52,7 @@ let top_level_function x = x + 1
     # Build a map of function names to nodes
     functions = {}
     for _, capture in matches:
-        func_name = unwrap_byte(capture['func_name'][0].text).decode('utf-8')
+        func_name = unwrap_bytes(capture['func_name'][0].text).decode('utf-8')
         func_node = capture['function'][0]
         functions[func_name] = func_node
 

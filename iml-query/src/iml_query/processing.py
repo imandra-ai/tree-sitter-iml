@@ -22,7 +22,7 @@ from .tree_sitter_utils import (
     insert_lines,
     mk_query,
     run_query,
-    unwrap_byte,
+    unwrap_bytes,
 )
 
 
@@ -35,7 +35,7 @@ def find_func_definition(tree: Tree, function_name: str) -> Node | None:
     func_def: Node | None = None
     for _, capture in matches:
         function_name_node = capture['function_name'][0]
-        function_name_rhs = unwrap_byte(function_name_node.text).decode('utf-8')
+        function_name_rhs = unwrap_bytes(function_name_node.text).decode('utf-8')
         if function_name_rhs == function_name:
             func_def = capture['function_definition'][0]
             break
@@ -91,7 +91,7 @@ def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
     for pattern_idx, capture in matches:
         if pattern_idx == 0:  # Top-level function pattern
             func_def = capture['top_function'][0]
-            func_name = unwrap_byte(capture['top_func_name'][0].text).decode(
+            func_name = unwrap_bytes(capture['top_func_name'][0].text).decode(
                 'utf-8'
             )
             top_level_functions.append(
@@ -103,7 +103,7 @@ def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
             )
         elif pattern_idx == 1:  # Nested function with measure pattern
             nested_func = capture['nested_function'][0]
-            nested_name = unwrap_byte(
+            nested_name = unwrap_bytes(
                 capture['nested_func_name'][0].text
             ).decode('utf-8')
             nested_functions_with_measures.append(
@@ -158,7 +158,7 @@ def verify_capture_to_req(capture: VerifyCapture) -> dict[str, str]:
     assert node.type == 'verify_statement', 'not verify_statement'
     assert node.text, 'None text'
     verify_src = (
-        unwrap_byte(node.text)
+        unwrap_bytes(node.text)
         .decode('utf-8')
         .strip()
         .removeprefix('verify')
@@ -179,7 +179,7 @@ def instance_capture_to_req(capture: InstanceCapture) -> dict[str, str]:
     assert node.type == 'instance_statement', 'not instance_statement'
     assert node.text, 'None text'
     instance_src = (
-        unwrap_byte(node.text)
+        unwrap_bytes(node.text)
         .decode('utf-8')
         .strip()
         .removeprefix('instance')
@@ -197,7 +197,7 @@ def eval_node_to_src(node: Node) -> str:
     assert node.type == 'eval_statement', 'not eval_statement'
     assert node.text, 'None text'
     src = (
-        unwrap_byte(node.text)
+        unwrap_bytes(node.text)
         .decode('utf-8')
         .strip()
         .removeprefix('eval')
@@ -397,7 +397,7 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
 
 def decomp_capture_to_req(capture: DecompCapture) -> dict[str, Any]:
     req: dict[str, Any] = {}
-    req['name'] = unwrap_byte(capture.decomposed_func_name.text).decode('utf8')
+    req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
     req_labels = decomp_attribute_payload_to_decomp_req_labels(
         capture.decomp_payload
     )
@@ -413,7 +413,7 @@ def extract_opaque_function_names(iml: str) -> list[str]:
     )
     for _, capture in matches:
         value_name_node = capture['function_name'][0]
-        func_name = unwrap_byte(value_name_node.text).decode('utf-8')
+        func_name = unwrap_bytes(value_name_node.text).decode('utf-8')
         opaque_functions.append(func_name)
 
     return opaque_functions

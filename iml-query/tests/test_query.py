@@ -10,7 +10,7 @@ from iml_query.tree_sitter_utils import (
     get_parser,
     mk_query,
     run_query,
-    unwrap_byte,
+    unwrap_bytes,
 )
 from iml_query.utils import get_rich_str
 
@@ -140,7 +140,7 @@ let redundant_regions x =
     func_names: list[str] = []
     for _, capture in matches:
         if 'decomposed_func_name' in capture:
-            name = unwrap_byte(capture['decomposed_func_name'][0].text).decode(
+            name = unwrap_bytes(capture['decomposed_func_name'][0].text).decode(
                 'utf-8'
             )
             func_names.append(name)

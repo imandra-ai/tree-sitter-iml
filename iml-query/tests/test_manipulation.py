@@ -22,7 +22,7 @@ from iml_query.tree_sitter_utils import (
     get_parser,
     mk_query,
     run_query,
-    unwrap_byte,
+    unwrap_bytes,
 )
 
 

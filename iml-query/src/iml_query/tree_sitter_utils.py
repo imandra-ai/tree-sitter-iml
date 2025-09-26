@@ -125,7 +125,7 @@ def run_queries(
     return dict(captures_map)
 
 
-def unwrap_byte(node_text: bytes | None) -> bytes:
+def unwrap_bytes(node_text: bytes | None) -> bytes:
     if node_text is None:
         raise ValueError('Node text is None')
     return node_text
@@ -356,7 +356,7 @@ def get_node_sexpr_with_leaf_text(
             if child_result:  # Only extend if child_result is not empty
                 result.extend(child_result)
     else:
-        text = unwrap_byte(node.text).decode('utf-8') if node.text else ''
+        text = unwrap_bytes(node.text).decode('utf-8') if node.text else ''
         if text.strip():  # Only print non-empty text
             result.append(f"{indent}{node.type}: '{text}'")
         else:

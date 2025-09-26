@@ -199,4 +199,4 @@ OPAQUE_QUERY_SRC = r"""
 class OpaqueCapture(BaseCapture):
     function_definition: Node
     function_name: Node
-    measure_attr: Node
+    opaque_attr: Node

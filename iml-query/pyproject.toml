@@ -66,6 +66,7 @@ ignore = [
     # "PTH123", # `open()` should be replaced by `Path.open()`
     "C417",   # Unnecessary `map()` usage (rewrite using a generator expression)
     "D100", # ignore missing docstring in module
+    "D101", # ignore missing docstring in public class
     "D102", # ignore missing docstring in public method
     "D103", # ignore missing docstring in public function
     "D104", # ignore missing docstring in public package
@@ -88,7 +89,11 @@ environment.python = "../.venv"
 
 [tool.ty.rules]
 # Handled by pyright
+unsupported-operator = "ignore"
+invalid-argument-type = "ignore"
+invalid-return-type = "ignore"
 possibly-unbound-attribute = "ignore"
+unresolved-import = "ignore"
 
 [tool.pyright]
 venvPath = ".."
@@ -99,3 +104,4 @@ reportMissingTypeStubs = false
 reportUnnecessaryIsInstance = false
 reportUnnecessaryTypeIgnoreComment = true
 reportUnusedImport = "none"
+reportUnusedExpression = false
