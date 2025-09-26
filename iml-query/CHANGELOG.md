@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [v0.3.0] - 2025.09.26
+- multi-pattern query optimization
+- add types (dataclasses) for captures
+
 ## [v0.2.0] - 2025.09.23
 - IML code manipulation
   - remove decomp / verify / instance requests from IML code
