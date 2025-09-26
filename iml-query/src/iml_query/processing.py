@@ -35,7 +35,9 @@ def find_func_definition(tree: Tree, function_name: str) -> Node | None:
     func_def: Node | None = None
     for _, capture in matches:
         function_name_node = capture['function_name'][0]
-        function_name_rhs = unwrap_bytes(function_name_node.text).decode('utf-8')
+        function_name_rhs = unwrap_bytes(function_name_node.text).decode(
+            'utf-8'
+        )
         if function_name_rhs == function_name:
             func_def = capture['function_definition'][0]
             break
@@ -419,6 +421,17 @@ def extract_opaque_function_names(iml: str) -> list[str]:
     return opaque_functions
 
 
+def remove_verify_reqs(
+    iml: str,
+    tree: Tree,
+    captures: list[VerifyCapture],
+) -> tuple[str, Tree]:
+    """Remove verify requests from IML code."""
+    verify_nodes = [capture.verify for capture in captures]
+    new_iml, new_tree = delete_nodes(iml, tree, nodes=verify_nodes)
+    return new_iml, new_tree
+
+
 def extract_verify_reqs(
     iml: str, tree: Tree
 ) -> tuple[str, Tree, list[dict[str, Any]]]:
@@ -428,17 +441,25 @@ def extract_verify_reqs(
         node=root,
     )
 
-    reqs: list[dict[str, Any]] = []
-    nodes_to_delete: list[Node] = []
-
-    for _, capture in matches:
-        capture = VerifyCapture.from_ts_capture(capture)
-        reqs.append(verify_capture_to_req(capture))
-        verify_statement_node = capture.verify
-        nodes_to_delete.append(verify_statement_node)
-
-    new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)
+    verify_captures = [
+        VerifyCapture.from_ts_capture(capture) for _, capture in matches
+    ]
+    reqs: list[dict[str, Any]] = [
+        verify_capture_to_req(capture) for capture in verify_captures
+    ]
+    new_iml, new_tree = remove_verify_reqs(iml, tree, verify_captures)
     return new_iml, new_tree, reqs
+
+
+def remove_instance_reqs(
+    iml: str,
+    tree: Tree,
+    captures: list[InstanceCapture],
+) -> tuple[str, Tree]:
+    """Remove instance requests from IML code."""
+    instance_nodes = [capture.instance for capture in captures]
+    new_iml, new_tree = delete_nodes(iml, tree, nodes=instance_nodes)
+    return new_iml, new_tree
 
 
 def extract_instance_reqs(
@@ -450,17 +471,26 @@ def extract_instance_reqs(
         node=root,
     )
 
-    reqs: list[dict[str, Any]] = []
-    nodes_to_delete: list[Node] = []
+    instance_captures = [
+        InstanceCapture.from_ts_capture(capture) for _, capture in matches
+    ]
 
-    for _, capture in matches:
-        capture = InstanceCapture.from_ts_capture(capture)
-        reqs.append(instance_capture_to_req(capture))
-        instance_statement_node = capture.instance
-        nodes_to_delete.append(instance_statement_node)
-
-    new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)
+    reqs: list[dict[str, Any]] = [
+        instance_capture_to_req(capture) for capture in instance_captures
+    ]
+    new_iml, new_tree = remove_instance_reqs(iml, tree, instance_captures)
     return new_iml, new_tree, reqs
+
+
+def remove_decomp_reqs(
+    iml: str,
+    tree: Tree,
+    captures: list[DecompCapture],
+) -> tuple[str, Tree]:
+    """Remove decomp requests from IML code."""
+    decomp_attr_nodes = [capture.decomp_attr for capture in captures]
+    new_iml, new_tree = delete_nodes(iml, tree, nodes=decomp_attr_nodes)
+    return new_iml, new_tree
 
 
 def extract_decomp_reqs(
@@ -472,18 +502,12 @@ def extract_decomp_reqs(
         node=root,
     )
 
-    reqs: list[dict[str, Any]] = []
-    nodes_to_delete: list[Node] = []
+    decomp_captures = [
+        DecompCapture.from_ts_capture(capture) for _, capture in matches
+    ]
 
-    for _, capture in matches:
-        capture = DecompCapture.from_ts_capture(capture)
-
-        decomp_attr_node = capture.decomp_attr
-        nodes_to_delete.append(decomp_attr_node)
-        req = decomp_capture_to_req(capture)
-        reqs.append(req)
-
-    new_iml, new_tree = delete_nodes(iml, tree, nodes=nodes_to_delete)
+    reqs = [decomp_capture_to_req(capture) for capture in decomp_captures]
+    new_iml, new_tree = remove_decomp_reqs(iml, tree, decomp_captures)
     return new_iml, new_tree, reqs
 
 
