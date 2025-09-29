@@ -7,7 +7,6 @@ from setuptools.command.build import build
 from setuptools.command.egg_info import egg_info
 from wheel.bdist_wheel import bdist_wheel
 
-
 macros: list[tuple[str, str | None]] = [
     ("PY_SSIZE_T_CLEAN", None),
     ("TREE_SITTER_HIDE_SYMBOLS", None),
@@ -43,6 +42,7 @@ class EggInfo(egg_info):
         self.filelist.recursive_include("queries", "*.scm")
         self.filelist.include("grammars/ocaml/src/tree_sitter/*.h")
         self.filelist.include("grammars/iml/src/tree_sitter/*.h")
+        self.filelist.include("common/scanner.h")
 
 
 setup(
@@ -69,7 +69,7 @@ setup(
             ],
             extra_compile_args=cflags,
             define_macros=macros,
-            include_dirs=["grammars/ocaml/src"],
+            include_dirs=["grammars/ocaml/src", "grammars/iml/src", "common"],
             py_limited_api=limited_api,
         )
     ],
