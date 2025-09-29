@@ -71,7 +71,7 @@ ignore = [
     "D105", # ignore missing docstring in magic methods
     "D107", # ignore missing docstring in __init__ methods
     "D203",
-    "D212",
+    "D213",
 ]
 flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
 mccabe = { max-complexity = 15 }
