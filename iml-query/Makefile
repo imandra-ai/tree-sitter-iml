@@ -13,3 +13,19 @@ cicd-lint:
 .PHONY: cicd-type-check
 cicd-type-check:
 	uvx pyright src/ tests/
+
+.PHONY: test
+test:
+	uv run pytest -vvv
+
+.PHONY: build
+	(cd .. && uv build)
+
+.PHONY: test-wheel
+test-wheel:
+	uv run --isolated --no-project --with ../dist/iml_query-*.whl --with ../dist/tree_sitter_ocaml-*.whl tests/smoke_test.py
+
+.PHONY: test-source-dist
+test-source-dist:
+	cd .. && uv build
+	uv run --isolated --no-project --with ../dist/iml_query-*.tar.gz --with ../dist/tree_sitter_ocaml-*.tar.gz tests/smoke_test.py
