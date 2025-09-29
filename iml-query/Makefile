@@ -19,7 +19,7 @@ test:
 	uv run pytest -vvv
 
 .PHONY: build
-	(cd .. && uv build)
+	uv build --no-sources
 
 .PHONY: test-wheel
 test-wheel:

@@ -23,6 +23,11 @@ tree-sitter-iml = { workspace = true }
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+exclude = [
+  "scripts",
+]
+
 [dependency-groups]
 dev = [
     "inline-snapshot>=0.28.0",
