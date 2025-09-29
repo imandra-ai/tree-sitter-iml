@@ -1,4 +1,4 @@
-"""OCaml grammar for tree-sitter"""
+"""IML (Imandra Modeling Language) grammar for tree-sitter"""
 
 from importlib.resources import files as _files
 

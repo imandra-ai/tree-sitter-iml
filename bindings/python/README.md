@@ -1,16 +1,11 @@
-# tree-sitter-ocaml
+# tree-sitter-iml
 
-[![CI][ci]](https://github.com/tree-sitter/tree-sitter-ocaml/actions/workflows/ci.yml)
-[![pypi][pypi]](https://pypi.org/project/tree-sitter-ocaml/)
-
-This module provides OCaml grammars for the [tree-sitter][] parsing library.
-There are separate grammars for implementations (`.ml`), interfaces (`.mli`)
-and types.
+This module provides IML (Imandra Modeling Language) grammars for the [tree-sitter][] parsing library. It's based on the [tree-sitter-ocaml](https://github.com/tree-sitter/tree-sitter-ocaml) grammar.
 
 ## Installation
 
 ```sh
-pip install tree-sitter-ocaml
+pip install tree-sitter-iml
 ```
 
 You will probably also need the [tree-sitter binding][tree-sitter binding].
@@ -24,34 +19,24 @@ pip install tree-sitter
 Load the grammar as a `Language` object:
 
 ```python
-import tree_sitter_ocaml
+import tree_sitter_iml
 from tree_sitter import Language, Parser
 
-language_ocaml = Language(tree_sitter_ocaml.language_ocaml())
+language_iml = Language(tree_sitter_iml.language_iml())
 ```
 
 Create a `Parser` and configure it to use the language:
 
 ```python
-parser = Parser(language_ocaml)
+parser = Parser(language_iml)
 ```
 
 Parse some source code:
 
 ```python
-tree = parser.parse(
-    b"""
-    module M : sig
-      val x : int
-    end
-    """
-)
+tree = parser.parse(iml_code)
 ```
 
-Use `language_ocaml_interface()` to parse interface files (with `.mli` extension)
+Use `language_iml()` for IML files, `language_ocaml()` for OCaml files,
+`language_ocaml_interface()` to parse interface files (with `.mli` extension),
 and `language_ocaml_type()` to parse type signatures.
-
-[ci]: https://img.shields.io/github/actions/workflow/status/tree-sitter/tree-sitter-ocaml/ci.yml?logo=github&label=CI
-[pypi]: https://img.shields.io/pypi/v/tree-sitter-ocaml?logo=pypi&logoColor=white&label=PyPI
-[tree-sitter]: https://tree-sitter.github.io/tree-sitter/
-[tree-sitter binding]: https://pypi.org/project/tree-sitter/

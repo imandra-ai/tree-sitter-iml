@@ -13,11 +13,11 @@ dependencies = [
     "sexpdata>=1.0.2",
     "structlog>=25.4.0",
     "tree-sitter>=0.25.1",
-    "tree-sitter-ocaml",
+    "tree-sitter-iml",
 ]
 
 [tool.uv.sources]
-tree-sitter-ocaml = { workspace = true }
+tree-sitter-iml = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import cast, overload
 
 import structlog
-import tree_sitter_ocaml
+import tree_sitter_iml
 from tree_sitter import Language, Node, Parser, Query, QueryCursor, Tree
 
 logger = structlog.get_logger(__name__)
@@ -11,9 +11,9 @@ logger = structlog.get_logger(__name__)
 def get_language(ocaml: bool = False) -> Language:
     """Get the tree-sitter language for the given language."""
     if ocaml:
-        language_capsule = tree_sitter_ocaml.language_ocaml()
+        language_capsule = tree_sitter_iml.language_ocaml()
     else:
-        language_capsule = tree_sitter_ocaml.language_iml()
+        language_capsule = tree_sitter_iml.language_iml()
     return Language(language_capsule)
 
 

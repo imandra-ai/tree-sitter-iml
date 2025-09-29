@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -9,7 +9,7 @@ resolution-markers = [
 [manifest]
 members = [
     "iml-query",
-    "tree-sitter-ocaml",
+    "tree-sitter-iml",
 ]
 
 [[package]]
@@ -180,7 +180,7 @@ dependencies = [
     { name = "sexpdata" },
     { name = "structlog" },
     { name = "tree-sitter" },
-    { name = "tree-sitter-ocaml" },
+    { name = "tree-sitter-iml" },
 ]
 
 [package.dev-dependencies]
@@ -198,7 +198,7 @@ requires-dist = [
     { name = "sexpdata", specifier = ">=1.0.2" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tree-sitter", specifier = ">=0.25.1" },
-    { name = "tree-sitter-ocaml", editable = "." },
+    { name = "tree-sitter-iml", editable = "." },
 ]
 
 [package.metadata.requires-dev]
@@ -715,7 +715,7 @@ wheels = [
 ]
 
 [[package]]
-name = "tree-sitter-ocaml"
+name = "tree-sitter-iml"
 version = "0.25.0"
 source = { editable = "." }
 

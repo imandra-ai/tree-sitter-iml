@@ -23,9 +23,9 @@ test:
 
 .PHONY: test-wheel
 test-wheel:
-	uv run --isolated --no-project --with ../dist/iml_query-*.whl --with ../dist/tree_sitter_ocaml-*.whl tests/smoke_test.py
+	uv run --isolated --no-project --with ../dist/iml_query-*.whl --with ../dist/tree_sitter_iml-*.whl tests/smoke_test.py
 
 .PHONY: test-source-dist
 test-source-dist:
 	cd .. && uv build
-	uv run --isolated --no-project --with ../dist/iml_query-*.tar.gz --with ../dist/tree_sitter_ocaml-*.tar.gz tests/smoke_test.py
+	uv run --isolated --no-project --with ../dist/iml_query-*.tar.gz --with ../dist/tree_sitter_iml-*.tar.gz tests/smoke_test.py
