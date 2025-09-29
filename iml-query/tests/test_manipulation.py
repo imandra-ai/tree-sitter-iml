@@ -8,21 +8,16 @@ from iml_query.processing import (
     insert_decomp_req,
     insert_verify_req,
 )
-from iml_query.tree_sitter_utils import get_parser, insert_lines
-
-from inline_snapshot import snapshot
-
 from iml_query.queries import (
     DECOMP_QUERY_SRC,
     VERIFY_QUERY_SRC,
 )
 from iml_query.tree_sitter_utils import (
     delete_nodes,
-    get_nesting_relationship,
     get_parser,
+    insert_lines,
     mk_query,
     run_query,
-    unwrap_bytes,
 )
 
 
@@ -207,8 +202,6 @@ let double_non_negative_is_increasing (x: int) = x >= 0 ==> double x > x
 verify (fun x -> x > 0 ==> double x > x)
 verify (double_non_negative_is_increasing)
 """)
-
-
 
 
 def test_delete_nodes_multiple():
