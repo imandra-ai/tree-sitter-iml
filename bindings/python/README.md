@@ -1,6 +1,6 @@
 # tree-sitter-iml
 
-This module provides IML (Imandra Modeling Language) grammars for the [tree-sitter][] parsing library. It's based on the [tree-sitter-ocaml](https://github.com/tree-sitter/tree-sitter-ocaml) grammar.
+This module provides [IML (Imandra Modeling Language)](https://docs.imandra.ai/imandrax/) grammars for the [tree-sitter][] parsing library. It's based on the [tree-sitter-ocaml](https://github.com/tree-sitter/tree-sitter-ocaml) grammar.
 
 ## Installation
 

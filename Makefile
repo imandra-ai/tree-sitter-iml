@@ -15,19 +15,22 @@ generate:
 	cd grammars/type && $(TS) generate
 
 build-python:
+	rm -rf ./dist/tree_sitter_iml-*
 	uv build
-	$(MAKE -C iml-query/ build)
+	$(MAKE) -C iml-query/ build
 
 publish-python-testpypi:
 	uv publish \
 	--index testpypi \
 	-u __token__ \
-	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest)
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
+	dist/tree_sitter_iml-*
 
 publish-python-pypi:
 	uv publish \
 	--index pypi \
 	-u __token__ \
-	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest)
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
+	dist/tree_sitter_iml-*
 
 .PHONY: all install uninstall clean test update generate

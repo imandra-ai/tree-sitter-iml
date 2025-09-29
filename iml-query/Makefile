@@ -19,6 +19,8 @@ test:
 	uv run pytest -vvv
 
 .PHONY: build
+build:
+	rm -rf ../dist/iml_query-*
 	uv build --no-sources
 
 .PHONY: test-wheel
@@ -27,5 +29,20 @@ test-wheel:
 
 .PHONY: test-source-dist
 test-source-dist:
-	cd .. && uv build
 	uv run --isolated --no-project --with ../dist/iml_query-*.tar.gz --with ../dist/tree_sitter_iml-*.tar.gz tests/smoke_test.py
+
+.PHONY: publish-testpypi
+publish-testpypi:
+	uv publish \
+	--index testpypi \
+	-u __token__ \
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
+	../dist/iml_query-*
+
+.PHONY: publish-pypi
+publish-pypi:
+	uv publish \
+	--index pypi \
+	-u __token__ \
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
+	../dist/iml_query-*

@@ -172,7 +172,7 @@ wheels = [
 
 [[package]]
 name = "iml-query"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "iml-query" }
 dependencies = [
     { name = "devtools" },
@@ -716,7 +716,7 @@ wheels = [
 
 [[package]]
 name = "tree-sitter-iml"
-version = "0.25.0"
+version = "0.25.2"
 source = { editable = "." }
 
 [package.optional-dependencies]
