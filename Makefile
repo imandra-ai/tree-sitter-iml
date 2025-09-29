@@ -14,4 +14,7 @@ generate:
 	cd grammars/interface && $(TS) generate
 	cd grammars/type && $(TS) generate
 
+build-python:
+	uv build
+
 .PHONY: all install uninstall clean test update generate
