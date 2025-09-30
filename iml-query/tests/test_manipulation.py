@@ -72,7 +72,7 @@ def test_manipualtion_decomp():
     decomp_req_2 = decomp_reqs[1]
 
     assert decomp_req_to_top_appl_text(decomp_req_2) == snapshot(
-        'top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]'  # noqa: E501
+        'top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()'  # noqa: E501
     )
 
     # %%
@@ -99,7 +99,7 @@ def test_manipualtion_decomp():
     let f x = x + 1
 
     let simple_branch2  = simple_branch
-[@@decomp top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]]
+[@@decomp top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]
     \n\
 
     let simple_branch3 x =
@@ -118,7 +118,7 @@ def test_manipualtion_decomp():
     let f x = x + 1
 
     let simple_branch2  = simple_branch
-[@@decomp top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]]
+[@@decomp top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]
     \n\
 
     let simple_branch3 x =
