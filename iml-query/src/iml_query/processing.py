@@ -386,7 +386,7 @@ def decomp_req_to_top_appl_text(req: dict[str, Any]) -> str:
             s = '~lift_bool:'
             s += f'{v} ()'
 
-    return f'top {" ".join(labels) + " "}()]'
+    return f'top {" ".join(labels) + " "}()'
 
 
 def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
