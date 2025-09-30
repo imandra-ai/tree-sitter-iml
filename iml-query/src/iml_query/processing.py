@@ -358,7 +358,7 @@ def decomp_req_to_top_appl_text(req: dict[str, Any]) -> str:
     labels: list[str] = []
     for k, v in req.items():
         if k == 'assuming':
-            if len(v) == 0:
+            if v is None:
                 continue
             labels.append(f'~assuming:{mk_id(v[0])}')
         if k == 'basis':
@@ -381,6 +381,8 @@ def decomp_req_to_top_appl_text(req: dict[str, Any]) -> str:
         if k == 'ctx_simp':
             labels.append(f'~ctx_simp:{"true" if v else "false"}')
         if k == 'lift_bool':
+            if v is None:
+                continue
             s = '~lift_bool:'
             s += f'{v} ()'
 
