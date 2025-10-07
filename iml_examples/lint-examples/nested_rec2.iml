@@ -1,0 +1,15 @@
+let f x =
+  let rec g y =
+    let rec h z =
+      z + 1
+    in
+    h y + 1
+  in
+  let i w =
+    w + 1
+  in
+g (i x + 1)
+
+
+let rec normal_rec x =
+  if x < 0 then 0 else normal_rec (x - 1)

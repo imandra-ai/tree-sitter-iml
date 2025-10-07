@@ -172,7 +172,7 @@ wheels = [
 
 [[package]]
 name = "iml-query"
-version = "0.3.2"
+version = "0.3.3"
 source = { editable = "iml-query" }
 dependencies = [
     { name = "devtools" },

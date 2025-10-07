@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 
 import structlog
-import tree_sitter_ocaml
+import tree_sitter_iml
 from tree_sitter import Language, Parser
 
 logger = structlog.get_logger()
@@ -44,10 +44,10 @@ def find_errors(node):
 def create_parser(use_iml=False):
     """Create and return an OCaml or IML parser."""
     if use_iml:
-        language_capsule = tree_sitter_ocaml.language_iml()
+        language_capsule = tree_sitter_iml.language_iml()
         language = Language(language_capsule)
     else:
-        language_capsule = tree_sitter_ocaml.language_ocaml()
+        language_capsule = tree_sitter_iml.language_ocaml()
         language = Language(language_capsule)
 
     parser = Parser()
