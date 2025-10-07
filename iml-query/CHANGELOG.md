@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [v0.3.3] - 2025.10.07
+- added:
+  - detect nested recursive function
+
 ## [v0.3.0] - 2025.09.26
 - multi-pattern query optimization
 - add types (dataclasses) for captures
