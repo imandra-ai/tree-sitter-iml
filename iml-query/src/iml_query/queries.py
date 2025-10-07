@@ -200,3 +200,20 @@ class OpaqueCapture(BaseCapture):
     function_definition: Node
     function_name: Node
     opaque_attr: Node
+
+
+REC_QUERY_SRC = r"""
+(value_definition
+    "let"
+    "rec"
+    (let_binding
+        pattern: (value_name) @function_name
+    )
+) @function_definition
+"""
+
+
+@dataclass(slots=True, frozen=True)
+class RecCapture(BaseCapture):
+    function_definition: Node
+    function_name: Node

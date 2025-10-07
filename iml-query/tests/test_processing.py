@@ -6,6 +6,7 @@ from iml_query.processing import (
     extract_decomp_reqs,
     extract_instance_reqs,
     extract_opaque_function_names,
+    find_nested_rec,
     iml_outline,
     insert_instance_req,
     instance_capture_to_req,
@@ -424,4 +425,44 @@ fun ys ->
             ],
             'opaque_functions': ['helper_function'],
         }
+    )
+
+
+def test_find_nested_recursive_function():
+    iml = """\
+let f x =
+  let rec g y =
+    let rec h z =
+      z + 1
+    in
+    h y + 1
+  in
+  let i w =
+    w + 1
+  in
+g (i x + 1)
+
+
+let rec normal_rec x =
+  if x < 0 then 0 else normal_rec (x - 1)\
+"""
+    nested_recs = find_nested_rec(iml)
+    # `f` and `normal_rec` are not in the list
+    assert nested_recs == snapshot(
+        [
+            {
+                'name': 'g',
+                'start_point': (1, 2),
+                'end_point': (5, 11),
+                'start_byte': 12,
+                'end_byte': 74,
+            },
+            {
+                'name': 'h',
+                'start_point': (2, 4),
+                'end_point': (3, 11),
+                'start_byte': 30,
+                'end_byte': 55,
+            },
+        ]
     )

@@ -8,10 +8,14 @@ from iml_query.queries import (
     DECOMP_QUERY_SRC,
     INSTANCE_QUERY_SRC,
     OPAQUE_QUERY_SRC,
+    REC_QUERY_SRC,
+    TOP_LEVEL_VALUE_DEFINITION_QUERY_SRC,
     VALUE_DEFINITION_QUERY_SRC,
     VERIFY_QUERY_SRC,
     DecompCapture,
     InstanceCapture,
+    RecCapture,
+    TopDefCapture,
     VerifyCapture,
 )
 
@@ -21,6 +25,7 @@ from .tree_sitter_utils import (
     get_parser,
     insert_lines,
     mk_query,
+    run_queries,
     run_query,
     unwrap_bytes,
 )
@@ -151,6 +156,52 @@ def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
             )
 
     return problematic_functions
+
+
+def find_nested_rec(iml: str) -> list[dict[str, Any]]:
+    """Find nested recursive function definitions in IML code.
+
+    Returns:
+        a list of dictionary for the name and location of each function
+
+    """
+    tree = get_parser().parse(bytes(iml, 'utf-8'))
+    queries = {
+        'top_level_functions': TOP_LEVEL_VALUE_DEFINITION_QUERY_SRC,
+        'rec_functions': REC_QUERY_SRC,
+    }
+    captures_map = run_queries(queries, tree.root_node)
+    top_captures: list[TopDefCapture] = [
+        TopDefCapture.from_ts_capture(capture)
+        for capture in captures_map.get('top_level_functions', [])
+    ]
+    rec_captures: list[RecCapture] = [
+        RecCapture.from_ts_capture(capture)
+        for capture in captures_map.get('rec_functions', [])
+    ]
+
+    #
+    nested_rec_caps: list[RecCapture] = []
+    top_function_nodes: list[Node] = [c.top_function for c in top_captures]
+
+    for rec_cap in rec_captures:
+        rec_function_node = rec_cap.function_definition
+        if rec_function_node not in top_function_nodes:
+            nested_rec_caps.append(rec_cap)
+
+    nested_rec_dict: list[dict[str, Any]] = []
+    for cap in nested_rec_caps:
+        d: dict[str, Any] = {
+            'name': unwrap_bytes(cap.function_name.text).decode('utf-8')
+        }
+        func_range = cap.function_definition.range
+        start_point, end_point = func_range.start_point, func_range.end_point
+        d['start_point'] = (start_point.row, start_point.column)
+        d['end_point'] = (end_point.row, end_point.column)
+        d['start_byte'] = func_range.start_byte
+        d['end_byte'] = func_range.end_byte
+        nested_rec_dict.append(d)
+    return nested_rec_dict
 
 
 def verify_capture_to_req(capture: VerifyCapture) -> dict[str, str]:
