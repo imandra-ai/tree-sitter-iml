@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [v0.3.4] - 2025.10.13
+- fixed:
+  - incorrect request insertion when IML code has no trailing newline at the end
+
 ## [v0.3.3] - 2025.10.07
 - added:
   - detect nested recursive function

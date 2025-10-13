@@ -1,6 +1,6 @@
 [project]
 name = "iml-query"
-version = "0.3.3"
+version = "0.3.4"
 description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "hongyu", email = "hongyu@imandra.ai" }]

@@ -287,3 +287,124 @@ let g y = y * 2
     # Delete no nodes
     new_iml, _new_tree = delete_nodes(iml, tree, nodes=[])
     assert new_iml == iml  # Should be unchanged
+
+
+def test_insert_lines_without_trailing_newline():
+    """Test insert_lines when the last line lacks a trailing newline."""
+    iml = """\
+let g (x : int) : int =
+  if x > 22 then
+    9
+  else
+    100 + x
+
+let f (x : int) : int =
+  if x > 99 then
+    100
+  else if 70 > x && x > 23 then
+    89 + x
+  else if x > 20 then
+    g x + 20
+  else if x > -2 then
+    103
+  else
+    99"""  # Note: no trailing newline
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    # Insert after the last line
+    file_end_row = tree.root_node.end_point[0]
+    req_str = 'verify (fun x -> f x > 0)'
+    new_iml, new_tree = insert_lines(
+        iml=iml, tree=tree, lines=[req_str], insert_after=file_end_row
+    )
+
+    # Should have a newline separating the last line and the inserted line
+    assert new_iml == snapshot("""\
+let g (x : int) : int =
+  if x > 22 then
+    9
+  else
+    100 + x
+
+let f (x : int) : int =
+  if x > 99 then
+    100
+  else if 70 > x && x > 23 then
+    89 + x
+  else if x > 20 then
+    g x + 20
+  else if x > -2 then
+    103
+  else
+    99
+verify (fun x -> f x > 0)
+""")
+
+    # Verify the tree is valid and parses correctly
+    assert not new_tree.root_node.has_error
+
+
+def test_insert_lines_multiple_consecutive():
+    """Test multiple consecutive insert_lines to verify tree validity."""
+    iml = """\
+let x = 1
+let y = 2"""  # No trailing newline
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    # First insertion after line 1
+    iml2, tree2 = insert_lines(iml, tree, lines=['let z = 3'], insert_after=1)
+    assert iml2 == snapshot("""\
+let x = 1
+let y = 2
+let z = 3
+""")
+    assert not tree2.root_node.has_error
+
+    # Second insertion after line 2 (using the new tree)
+    iml3, tree3 = insert_lines(iml2, tree2, lines=['let w = 4'], insert_after=2)
+    assert iml3 == snapshot("""\
+let x = 1
+let y = 2
+let z = 3
+let w = 4
+""")
+    assert not tree3.root_node.has_error
+
+    # Third insertion in the middle (line 1)
+    iml4, tree4 = insert_lines(iml3, tree3, lines=['let a = 0'], insert_after=1)
+    assert iml4 == snapshot("""\
+let x = 1
+let y = 2
+let a = 0
+let z = 3
+let w = 4
+""")
+    assert not tree4.root_node.has_error
+
+
+def test_insert_lines_out_of_bounds():
+    """Test insert_lines raises ValueError for out-of-bounds line numbers."""
+    iml = """\
+let x = 1
+let y = 2
+"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    # Should raise for insert_after > max_valid
+    # File has 2 lines with trailing \n, so insert_after=2 is valid
+    # but insert_after=3 should be out of bounds
+    try:
+        insert_lines(iml, tree, lines=['let z = 3'], insert_after=3)
+        raise AssertionError('Expected ValueError')
+    except ValueError as e:
+        assert 'out of range' in str(e)
+
+    # Also test with negative line number
+    try:
+        insert_lines(iml, tree, lines=['let z = 3'], insert_after=-1)
+        raise AssertionError('Expected ValueError')
+    except ValueError as e:
+        assert 'out of range' in str(e)
