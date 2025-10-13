@@ -254,18 +254,41 @@ def insert_lines(
     lines: list[str],
     insert_after: int,
 ) -> tuple[str, Tree]:
-    """Insert lines of code after the given line number.
+    r"""Insert lines of code after the given line number.
 
-    # AI: this is implemented by AI
+    AI: this is implemented by AI
 
     Arguments:
-        lines: list of lines to insert
         iml: old IML code
         tree: old parsed tree
-        insert_after: line number to insert after (0-based)
+        lines: list of lines to insert (without trailing newlines)
+        insert_after: line number to insert after
+            (0-based, must be < len(lines))
 
-    Return:
+    Returns:
         new IML code and new tree
+
+    Implementation notes:
+        Leading newline handling:
+            When using splitlines(keepends=True), only the last line may lack
+            a trailing newline (if the original string doesn't end with '\n').
+            If inserting after such a line, we must prepend '\n' to separate
+            the existing line from the inserted content.
+
+        Tree edit point calculation:
+            Edit points are (row, col) tuples where col is the byte offset.
+
+            Case 1 - Last line without trailing newline:
+                start_point = (insert_after, byte_len_of_line)
+                Insertion happens at the end of the current line.
+
+            Case 2 - Normal line with trailing newline:
+                start_point = (insert_after + 1, 0)
+                Insertion happens at the beginning of the next line.
+
+            For both cases:
+                old_end_point = start_point (zero-width insertion)
+                new_end_point = (start_row + num_newlines, 0)
 
     """
     if not lines:
@@ -274,38 +297,76 @@ def insert_lines(
     tree = tree.copy()
 
     # Split into lines to find insertion point
+    # TODO: use line info in tree to determine line number
     iml_lines = iml.splitlines(keepends=True)
 
     # Validate line number
-    if insert_after < 0 or insert_after > len(iml_lines):
+    # Allow insert_after == len(iml_lines) when last line ends with \n
+    # (tree.root_node.end_point can point to the line after the last)
+    max_insert_after = len(iml_lines) - 1
+    if iml_lines and iml_lines[-1].endswith('\n'):
+        max_insert_after = len(iml_lines)
+
+    if insert_after < 0 or insert_after > max_insert_after:
         raise ValueError(
-            f'Line number {insert_after} out of range (0-{len(iml_lines) - 1})'
+            f'Line number {insert_after} out of range (0-{max_insert_after})'
         )
 
     # Calculate byte position for insertion
     # Find the end of the line we're inserting after
-    lines_before = iml_lines[: insert_after + 1]
-    insert_byte_pos = sum(len(line.encode('utf-8')) for line in lines_before)
+    if insert_after >= len(iml_lines):
+        # Inserting after the last line (when file ends with \n)
+        insert_byte_pos = sum(len(line.encode('utf-8')) for line in iml_lines)
+        need_leading_newline = False  # Last line already has \n
+    else:
+        lines_before = iml_lines[: insert_after + 1]
+        insert_byte_pos = sum(
+            len(line.encode('utf-8')) for line in lines_before
+        )
+        # Check if we need to add a leading newline
+        # (the last line might not end with "\n", so which case we need to add
+        # it)
+        need_leading_newline = not iml_lines[insert_after].endswith('\n')
 
     # Prepare the text to insert (ensure lines end with newlines)
     insert_text = '\n'.join(lines)
     if not insert_text.endswith('\n'):
         insert_text += '\n'
+    if need_leading_newline:
+        insert_text = '\n' + insert_text
 
     insert_bytes = insert_text.encode('utf-8')
     insert_length = len(insert_bytes)
+
+    # Calculate tree edit points
+    if insert_after >= len(iml_lines):
+        # Inserting after all lines (file ends with \n)
+        start_row = insert_after
+        start_col = 0
+    elif need_leading_newline:
+        # Inserting at the end of line insert_after (no trailing newline)
+        start_row = insert_after
+        start_col = len(iml_lines[insert_after].encode('utf-8'))
+    else:
+        # Inserting at the start of the next line
+        start_row = insert_after + 1
+        start_col = 0
+
+    start_point = (start_row, start_col)
+    old_end_point = start_point  # For insertion, old_end = start
+
+    # Calculate end point based on number of newlines inserted
+    num_newlines = insert_text.count('\n')
+    new_end_point = (start_row + num_newlines, 0)
 
     # Apply tree edit
     tree.edit(
         start_byte=insert_byte_pos,
         old_end_byte=insert_byte_pos,  # Insertion: old_end = start
         new_end_byte=insert_byte_pos + insert_length,
-        start_point=(insert_after + 1, 0),  # Start of next line
-        old_end_point=(insert_after + 1, 0),  # Insertion: old_end = start
-        new_end_point=(
-            insert_after + 1 + len(lines),
-            0,
-        ),  # After inserted lines
+        start_point=start_point,
+        old_end_point=old_end_point,
+        new_end_point=new_end_point,
     )
 
     # Apply text insertion
