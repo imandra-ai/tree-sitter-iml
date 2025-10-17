@@ -268,7 +268,7 @@ class DecompParsingError(Exception):
 
 
 def top_application_to_decomp(node: Node) -> dict[str, Any]:
-    """Extract Decomp request request from a top application node."""
+    """Extract Decomp request from a `Decompose.top` application node."""
     assert node.type == 'application_expression'
 
     extract_top_arg_query = mk_query(r"""
