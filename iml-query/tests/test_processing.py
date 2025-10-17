@@ -2,6 +2,7 @@ import pytest
 from inline_snapshot import snapshot
 
 from iml_query.processing import (
+    Nesting,
     eval_capture_to_src,
     extract_decomp_reqs,
     extract_instance_reqs,
@@ -25,6 +26,7 @@ from iml_query.tree_sitter_utils import (
     mk_query,
     run_queries,
     run_query,
+    unwrap_bytes,
 )
 
 
@@ -460,22 +462,16 @@ let rec normal_rec x =
   if x < 0 then 0 else normal_rec (x - 1)\
 """
     nested_recs = find_nested_rec(iml)
-    # `f` and `normal_rec` are not in the list
-    assert nested_recs == snapshot(
+
+    def pp_nesting(n: Nesting) -> str:
+        return (
+            f'{unwrap_bytes(n["parent"].function_name.text)} -> '
+            f'{unwrap_bytes(n["child"].function_name.text)}'
+        )
+
+    assert [pp_nesting(n) for n in nested_recs] == snapshot(
         [
-            {
-                'name': 'g',
-                'start_point': (1, 2),
-                'end_point': (5, 11),
-                'start_byte': 12,
-                'end_byte': 74,
-            },
-            {
-                'name': 'h',
-                'start_point': (2, 4),
-                'end_point': (3, 11),
-                'start_byte': 30,
-                'end_byte': 55,
-            },
+            "b'f' -> b'g'",
+            "b'f' -> b'h'",
         ]
     )

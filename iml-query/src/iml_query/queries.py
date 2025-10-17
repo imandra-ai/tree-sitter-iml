@@ -180,23 +180,6 @@ class ValueDefCapture(BaseCapture):
         return cls(**data)  # pyright: ignore
 
 
-TOP_LEVEL_VALUE_DEFINITION_QUERY_SRC = r"""
-(compilation_unit
-    (value_definition
-        (let_binding
-            pattern: (value_name) @top_function_name
-        )
-    ) @top_function
-)
-"""
-
-
-@dataclass(slots=True, frozen=True)
-class TopDefCapture(BaseCapture):
-    top_function: Node
-    top_function_name: Node
-
-
 MEASURE_QUERY_SRC = r"""
 (value_definition
     (let_binding
@@ -236,20 +219,3 @@ class OpaqueCapture(BaseCapture):
     function_definition: Node
     function_name: Node
     opaque_attr: Node
-
-
-REC_QUERY_SRC = r"""
-(value_definition
-    "let"
-    "rec"
-    (let_binding
-        pattern: (value_name) @function_name
-    )
-) @function_definition
-"""
-
-
-@dataclass(slots=True, frozen=True)
-class RecCapture(BaseCapture):
-    function_definition: Node
-    function_name: Node
