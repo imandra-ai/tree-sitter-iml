@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v0.4.0 - 2025.10.17
+- added:
+  - a function to replace, add, or delete a definition
+- changed:
+  - query for top level function, recursive function, and all regular functions are consolidated into one query
+  
+
 ## [v0.3.4] - 2025.10.13
 - fixed:
   - incorrect request insertion when IML code has no trailing newline at the end
