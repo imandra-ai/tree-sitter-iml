@@ -77,6 +77,11 @@ EVAL_QUERY_SRC = r"""
 """
 
 
+@dataclass(slots=True, frozen=True)
+class EvalCapture(BaseCapture):
+    eval: Node
+
+
 # TODO:
 # (path import with explicit module name)
 # [@@@import Mod_name, "path/to/file.iml"]

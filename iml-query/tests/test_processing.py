@@ -2,7 +2,7 @@ import pytest
 from inline_snapshot import snapshot
 
 from iml_query.processing import (
-    eval_node_to_src,
+    eval_capture_to_src,
     extract_decomp_reqs,
     extract_instance_reqs,
     extract_opaque_function_names,
@@ -16,10 +16,16 @@ from iml_query.queries import (
     EVAL_QUERY_SRC,
     INSTANCE_QUERY_SRC,
     VERIFY_QUERY_SRC,
+    EvalCapture,
     InstanceCapture,
     VerifyCapture,
 )
-from iml_query.tree_sitter_utils import get_parser, mk_query, run_query
+from iml_query.tree_sitter_utils import (
+    get_parser,
+    mk_query,
+    run_queries,
+    run_query,
+)
 
 
 def test_verify_node_to_req():
@@ -107,9 +113,16 @@ eval (
 """
     parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
-    matches = run_query(mk_query(EVAL_QUERY_SRC), node=tree.root_node)
+    matches = run_queries(
+        queries={'eval': EVAL_QUERY_SRC},
+        node=tree.root_node,
+    )
 
-    srcs = [eval_node_to_src(capture['eval'][0]) for _, capture in matches]
+    eval_captures = [
+        EvalCapture.from_ts_capture(capture) for capture in matches['eval']
+    ]
+
+    srcs = [eval_capture_to_src(cap) for cap in eval_captures]
     assert srcs == snapshot(
         [
             '1 + 2 * 3',

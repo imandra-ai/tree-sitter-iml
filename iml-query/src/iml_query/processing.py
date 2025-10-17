@@ -13,6 +13,7 @@ from iml_query.queries import (
     VALUE_DEFINITION_QUERY_SRC,
     VERIFY_QUERY_SRC,
     DecompCapture,
+    EvalCapture,
     InstanceCapture,
     RecCapture,
     TopDefCapture,
@@ -245,12 +246,10 @@ def instance_capture_to_req(capture: InstanceCapture) -> dict[str, str]:
     return req
 
 
-def eval_node_to_src(node: Node) -> str:
+def eval_capture_to_src(capture: EvalCapture) -> str:
     """Extract str from an eval statement node."""
-    assert node.type == 'eval_statement', 'not eval_statement'
-    assert node.text, 'None text'
     src = (
-        unwrap_bytes(node.text)
+        unwrap_bytes(capture.eval.text)
         .decode('utf-8')
         .strip()
         .removeprefix('eval')
