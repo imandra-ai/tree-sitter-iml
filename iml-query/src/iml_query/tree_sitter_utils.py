@@ -334,8 +334,6 @@ def insert_lines(
 
     # Prepare the text to insert (ensure lines end with newlines)
     insert_text = '\n'.join(lines)
-    if not insert_text.endswith('\n'):
-        insert_text += '\n'
     if need_leading_newline:
         insert_text = '\n' + insert_text
 
