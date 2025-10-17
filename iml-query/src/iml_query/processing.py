@@ -1,6 +1,6 @@
 """Post-processing and manipulation functions for IML queries."""
 
-from typing import Any
+from typing import Any, TypedDict
 
 from tree_sitter import Node, Tree
 
@@ -8,14 +8,12 @@ from iml_query.queries import (
     DECOMP_QUERY_SRC,
     INSTANCE_QUERY_SRC,
     OPAQUE_QUERY_SRC,
-    REC_QUERY_SRC,
-    TOP_LEVEL_VALUE_DEFINITION_QUERY_SRC,
     VALUE_DEFINITION_QUERY_SRC,
     VERIFY_QUERY_SRC,
     DecompCapture,
+    EvalCapture,
     InstanceCapture,
-    RecCapture,
-    TopDefCapture,
+    ValueDefCapture,
     VerifyCapture,
 )
 
@@ -158,7 +156,49 @@ def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
     return problematic_functions
 
 
-def find_nested_rec(iml: str) -> list[dict[str, Any]]:
+class Nesting(TypedDict):
+    parent: ValueDefCapture
+    child: ValueDefCapture
+    nesting_level: int
+
+
+def resolve_nesting_definitions(
+    value_defs: list[ValueDefCapture],
+) -> list[Nesting]:
+    """Get nesting relationship between value definitions."""
+    top_levels = [c for c in value_defs if c.is_top_level]
+    non_top_levels = [c for c in value_defs if not c.is_top_level]
+
+    nestings: list[Nesting] = []
+
+    for non_top in non_top_levels:
+        for top in top_levels:
+            nesting_level = get_nesting_relationship(
+                non_top.function_definition,
+                top.function_definition,
+            )
+            match nesting_level:
+                case -1:
+                    pass  # No nesting
+                case i if i > 0:
+                    nestings.append(
+                        Nesting(
+                            parent=top,
+                            child=non_top,
+                            nesting_level=nesting_level,
+                        )
+                    )
+                case 0:
+                    raise AssertionError(
+                        'Never: non-top level definition cannot be the same as '
+                        'top level'
+                    )
+                case _ as unreachable:
+                    raise AssertionError(f'Never: unreachable {unreachable}')
+    return nestings
+
+
+def find_nested_rec(iml: str) -> list[Nesting]:
     """Find nested recursive function definitions in IML code.
 
     Returns:
@@ -167,41 +207,16 @@ def find_nested_rec(iml: str) -> list[dict[str, Any]]:
     """
     tree = get_parser().parse(bytes(iml, 'utf-8'))
     queries = {
-        'top_level_functions': TOP_LEVEL_VALUE_DEFINITION_QUERY_SRC,
-        'rec_functions': REC_QUERY_SRC,
+        'value_def': VALUE_DEFINITION_QUERY_SRC,
     }
     captures_map = run_queries(queries, tree.root_node)
-    top_captures: list[TopDefCapture] = [
-        TopDefCapture.from_ts_capture(capture)
-        for capture in captures_map.get('top_level_functions', [])
+    val_captures: list[ValueDefCapture] = [
+        ValueDefCapture.from_ts_capture(capture)
+        for capture in captures_map.get('value_def', [])
     ]
-    rec_captures: list[RecCapture] = [
-        RecCapture.from_ts_capture(capture)
-        for capture in captures_map.get('rec_functions', [])
-    ]
-
-    #
-    nested_rec_caps: list[RecCapture] = []
-    top_function_nodes: list[Node] = [c.top_function for c in top_captures]
-
-    for rec_cap in rec_captures:
-        rec_function_node = rec_cap.function_definition
-        if rec_function_node not in top_function_nodes:
-            nested_rec_caps.append(rec_cap)
-
-    nested_rec_dict: list[dict[str, Any]] = []
-    for cap in nested_rec_caps:
-        d: dict[str, Any] = {
-            'name': unwrap_bytes(cap.function_name.text).decode('utf-8')
-        }
-        func_range = cap.function_definition.range
-        start_point, end_point = func_range.start_point, func_range.end_point
-        d['start_point'] = (start_point.row, start_point.column)
-        d['end_point'] = (end_point.row, end_point.column)
-        d['start_byte'] = func_range.start_byte
-        d['end_byte'] = func_range.end_byte
-        nested_rec_dict.append(d)
-    return nested_rec_dict
+    nestings = resolve_nesting_definitions(val_captures)
+    nestings = [n for n in nestings if n['child'].is_rec]
+    return nestings
 
 
 def verify_capture_to_req(capture: VerifyCapture) -> dict[str, str]:
@@ -245,12 +260,10 @@ def instance_capture_to_req(capture: InstanceCapture) -> dict[str, str]:
     return req
 
 
-def eval_node_to_src(node: Node) -> str:
+def eval_capture_to_src(capture: EvalCapture) -> str:
     """Extract str from an eval statement node."""
-    assert node.type == 'eval_statement', 'not eval_statement'
-    assert node.text, 'None text'
     src = (
-        unwrap_bytes(node.text)
+        unwrap_bytes(capture.eval.text)
         .decode('utf-8')
         .strip()
         .removeprefix('eval')
@@ -269,7 +282,7 @@ class DecompParsingError(Exception):
 
 
 def top_application_to_decomp(node: Node) -> dict[str, Any]:
-    """Extract Decomp request request from a top application node."""
+    """Extract Decomp request from a `Decompose.top` application node."""
     assert node.type == 'application_expression'
 
     extract_top_arg_query = mk_query(r"""
@@ -635,3 +648,74 @@ def insert_instance_req(
         insert_after=file_end_row,
     )
     return new_iml, new_tree
+
+
+def update_top_definition(
+    iml: str,
+    tree: Tree,
+    top_def_name: str,
+    new_definition: str,
+    keep_previous_definition: bool = False,
+) -> tuple[str, Tree]:
+    """Update the definition of a top-level function.
+
+    Args:
+        iml: input IML code
+        tree: syntax tree of input IML code
+        top_def_name: name of top-level function to update
+        new_definition: new definition of top-level function
+        keep_previous_definition: whether to keep the previous definition
+            by default, the previous definition is replaced by the new
+            definition
+
+    Raise: ValueError
+        - if input IML is invalid
+        - if top-level function definition is not found
+        - if updated IML is invalid
+
+    """
+    matches = run_queries(
+        queries={'value_def': VALUE_DEFINITION_QUERY_SRC}, node=tree.root_node
+    )
+    value_defs: list[ValueDefCapture] = [
+        ValueDefCapture.from_ts_capture(capture)
+        for capture in matches['value_def']
+    ]
+    top_defs = [c for c in value_defs if c.is_top_level]
+    matched_defs = [
+        top_def
+        for top_def in top_defs
+        if (
+            top_def_name
+            == unwrap_bytes(top_def.function_name.text).decode('utf-8')
+        )
+    ]
+
+    if len(matched_defs) == 0:
+        raise ValueError(f'Function {top_def_name} not found in syntax tree')
+
+    val_def: ValueDefCapture = matched_defs[0]
+
+    func_def_node = val_def.function_definition
+    func_def_start_row = func_def_node.start_point[0]
+    func_def_end_row = func_def_node.end_point[0]
+
+    # Remove previous definition if keep_previous_definition is False
+    if keep_previous_definition:
+        iml_1 = iml
+        tree_1 = tree
+        insert_after_line = func_def_end_row
+    else:
+        iml_1, tree_1 = delete_nodes(iml, tree, nodes=[func_def_node])
+        insert_after_line = func_def_start_row - 1
+
+    if new_definition == '':
+        return iml_1, tree_1
+    else:
+        iml_2, tree_2 = insert_lines(
+            iml_1,
+            tree_1,
+            lines=[new_definition],
+            insert_after=insert_after_line,
+        )
+        return iml_2, tree_2

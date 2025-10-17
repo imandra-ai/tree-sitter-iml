@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
-from typing import Self
+from typing import Self, override
 
 from tree_sitter import Node
 
@@ -12,6 +12,14 @@ from tree_sitter import Node
 class BaseCapture:
     @classmethod
     def from_ts_capture(cls, capture: dict[str, list[Node]]) -> Self:
+        """Create a new instance of the class from tree-sitter capture dict.
+
+        Args:
+            capture (dict[str, list[Node]]): Tree-sitter capture dict.
+                keys are the capture names, values are lists of nodes (normally
+                of length 1).
+
+        """
         capture_: dict[str, Node] = {k: v[0] for k, v in capture.items()}
 
         field_names = {f.name for f in fields(cls)}
@@ -77,6 +85,11 @@ EVAL_QUERY_SRC = r"""
 """
 
 
+@dataclass(slots=True, frozen=True)
+class EvalCapture(BaseCapture):
+    eval: Node
+
+
 # TODO:
 # (path import with explicit module name)
 # [@@@import Mod_name, "path/to/file.iml"]
@@ -138,27 +151,33 @@ IMPORT_3_QUERY_SRC = r"""
 
 VALUE_DEFINITION_QUERY_SRC = r"""
 (value_definition
+    "rec"? @rec
     (let_binding
         (value_name) @function_name
     )
 ) @function_definition
 """
 
-TOP_LEVEL_VALUE_DEFINITION_QUERY_SRC = r"""
-(compilation_unit
-    (value_definition
-        (let_binding
-            pattern: (value_name) @top_function_name
-        )
-    ) @top_function
-)
-"""
-
 
 @dataclass(slots=True, frozen=True)
-class TopDefCapture(BaseCapture):
-    top_function: Node
-    top_function_name: Node
+class ValueDefCapture(BaseCapture):
+    function_definition: Node
+    function_name: Node
+    is_rec: bool
+    is_top_level: bool
+
+    @override
+    @classmethod
+    def from_ts_capture(cls, capture: dict[str, list[Node]]) -> Self:
+        data: dict[str, Node | bool] = {}
+        func_def_node = capture['function_definition'][0]
+        data['function_definition'] = func_def_node
+        data['function_name'] = capture['function_name'][0]
+        data['is_rec'] = 'rec' in capture
+        assert func_def_node.parent, 'Never: no parent'
+        parent_type = func_def_node.parent.type
+        data['is_top_level'] = parent_type == 'compilation_unit'
+        return cls(**data)  # pyright: ignore
 
 
 MEASURE_QUERY_SRC = r"""
@@ -200,20 +219,3 @@ class OpaqueCapture(BaseCapture):
     function_definition: Node
     function_name: Node
     opaque_attr: Node
-
-
-REC_QUERY_SRC = r"""
-(value_definition
-    "let"
-    "rec"
-    (let_binding
-        pattern: (value_name) @function_name
-    )
-) @function_definition
-"""
-
-
-@dataclass(slots=True, frozen=True)
-class RecCapture(BaseCapture):
-    function_definition: Node
-    function_name: Node

@@ -1,6 +1,6 @@
 [project]
 name = "iml-query"
-version = "0.3.4"
+version = "0.4.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "hongyu", email = "hongyu@imandra.ai" }]
@@ -90,7 +90,7 @@ environment.python = "../.venv"
 unsupported-operator = "ignore"
 invalid-argument-type = "ignore"
 invalid-return-type = "ignore"
-possibly-unbound-attribute = "ignore"
+possibly-missing-attribute = "ignore"
 unresolved-import = "ignore"
 
 [tool.pyright]
