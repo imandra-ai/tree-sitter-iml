@@ -1,6 +1,6 @@
 """Post-processing and manipulation functions for IML queries."""
 
-from typing import Any
+from typing import Any, TypedDict
 
 from tree_sitter import Node, Tree
 
@@ -17,6 +17,7 @@ from iml_query.queries import (
     InstanceCapture,
     RecCapture,
     TopDefCapture,
+    ValueDefCapture,
     VerifyCapture,
 )
 
@@ -157,6 +158,48 @@ def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
             )
 
     return problematic_functions
+
+
+class Nesting(TypedDict):
+    parent: ValueDefCapture
+    child: ValueDefCapture
+    nesting_level: int
+
+
+def resolve_nesting_definitions(
+    value_defs: list[ValueDefCapture],
+) -> list[Nesting]:
+    """Get nesting relationship between value definitions."""
+    top_levels = [c for c in value_defs if c.is_top_level]
+    non_top_levels = [c for c in value_defs if not c.is_top_level]
+
+    nestings: list[Nesting] = []
+
+    for non_top in non_top_levels:
+        for top in top_levels:
+            nesting_level = get_nesting_relationship(
+                non_top.function_definition,
+                top.function_definition,
+            )
+            match nesting_level:
+                case -1:
+                    pass  # No nesting
+                case i if i > 0:
+                    nestings.append(
+                        Nesting(
+                            parent=top,
+                            child=non_top,
+                            nesting_level=nesting_level,
+                        )
+                    )
+                case 0:
+                    raise AssertionError(
+                        'Never: non-top level definition cannot be the same as '
+                        'top level'
+                    )
+                case _ as unreachable:
+                    raise AssertionError(f'Never: unreachable {unreachable}')
+    return nestings
 
 
 def find_nested_rec(iml: str) -> list[dict[str, Any]]:

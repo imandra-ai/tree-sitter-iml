@@ -163,8 +163,8 @@ VALUE_DEFINITION_QUERY_SRC = r"""
 class ValueDefCapture(BaseCapture):
     function_definition: Node
     function_name: Node
-    rec: bool
-    top_level: bool
+    is_rec: bool
+    is_top_level: bool
 
     @override
     @classmethod
@@ -173,10 +173,10 @@ class ValueDefCapture(BaseCapture):
         func_def_node = capture['function_definition'][0]
         data['function_definition'] = func_def_node
         data['function_name'] = capture['function_name'][0]
-        data['rec'] = 'rec' in capture
+        data['is_rec'] = 'rec' in capture
         assert func_def_node.parent, 'Never: no parent'
         parent_type = func_def_node.parent.type
-        data['top_level'] = parent_type == 'compilation_unit'
+        data['is_top_level'] = parent_type == 'compilation_unit'
         return cls(**data)  # pyright: ignore
 
 
