@@ -307,14 +307,18 @@ def insert_lines(
     if iml_lines and iml_lines[-1].endswith('\n'):
         max_insert_after = len(iml_lines)
 
-    if insert_after < 0 or insert_after > max_insert_after:
+    if insert_after < -1 or insert_after > max_insert_after:
         raise ValueError(
             f'Line number {insert_after} out of range (0-{max_insert_after})'
         )
 
     # Calculate byte position for insertion
     # Find the end of the line we're inserting after
-    if insert_after >= len(iml_lines):
+    if insert_after == -1:
+        # Inserting at the end of the file
+        insert_byte_pos = 0
+        need_leading_newline = False
+    elif insert_after >= len(iml_lines):
         # Inserting after the last line (when file ends with \n)
         insert_byte_pos = sum(len(line.encode('utf-8')) for line in iml_lines)
         need_leading_newline = False  # Last line already has \n
