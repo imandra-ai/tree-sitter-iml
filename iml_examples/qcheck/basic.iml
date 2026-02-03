@@ -1,0 +1,7 @@
+let f = fun x -> x + 1
+
+let g = fun x -> x + 2
+
+let f_g_x_gt_3 = fun x -> f (g x) - x > 3
+
+qcheck f_g_x_gt_3
