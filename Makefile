@@ -29,8 +29,19 @@ generate:
 	cd grammars/interface && $(TS) generate
 	cd grammars/type && $(TS) generate
 
+.PHONY: all install uninstall clean test update generate
+
 # IML specific
 # ====================
+
+generate-iml:  ## Regenerate IML parser from grammar.js
+	$(MAKE) -C grammars/iml generate
+
+build-iml:  ## Build IML parser library (libtree-sitter-iml.a/.dylib)
+	$(MAKE) -C grammars/iml
+
+clean-iml:  ## Clean IML build artifacts
+	$(MAKE) -C grammars/iml clean
 
 build-python:  ## Build python package
 	rm -rf ./dist/tree_sitter_iml-*
@@ -50,4 +61,4 @@ publish-python-pypi:  ## Publish python package to pypi
 	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
 	dist/tree_sitter_iml-*
 
-.PHONY: all install uninstall clean test update generate
+.PHONY: generate-iml build-iml clean-iml build-python publish-python-testpypi publish-python-pypi
