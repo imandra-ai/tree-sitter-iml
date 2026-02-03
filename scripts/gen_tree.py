@@ -143,30 +143,25 @@ def generate_tree(
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(__doc__)
+    parser = argparse.ArgumentParser(
+        description="Generate .tree files from .iml files using tree-sitter-iml parser.",
+        epilog="If output is not specified, outputs to <input>.iml.tree or <input>.ocaml.tree",
+    )
+    parser.add_argument("input", type=Path, help="Input .iml file")
+    parser.add_argument("output", type=Path, nargs="?", help="Output .tree file (optional)")
+    parser.add_argument(
+        "--ocaml", "-o",
+        action="store_true",
+        help="Use OCaml parser instead of IML parser (for comparison)",
+    )
+
+    args = parser.parse_args()
+
+    if not args.input.exists():
+        print(f"Error: File not found: {args.input}", file=sys.stderr)
         sys.exit(1)
 
-    # Parse arguments
-    args = sys.argv[1:]
-    use_ocaml = False
-
-    if args[0] in ("--ocaml", "-o"):
-        use_ocaml = True
-        args = args[1:]
-
-    if not args:
-        print("Error: No input file specified", file=sys.stderr)
-        sys.exit(1)
-
-    input_path = Path(args[0])
-    if not input_path.exists():
-        print(f"Error: File not found: {input_path}", file=sys.stderr)
-        sys.exit(1)
-
-    output_path = Path(args[1]) if len(args) > 1 else None
-
-    generate_tree(input_path, output_path, use_ocaml)
+    generate_tree(args.input, args.output, args.ocaml)
 
 
 if __name__ == "__main__":
