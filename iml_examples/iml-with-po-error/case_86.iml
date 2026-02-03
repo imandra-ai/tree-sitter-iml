@@ -1,0 +1,55 @@
+let char_a: LChar.t = List.hd {l|a|l}
+
+let rec char_index_helper (ch : LChar.t) (idx : int) (chars : LString.t) : int =
+  match chars with
+  | [] -> 0
+  | c :: rest ->
+      if c = ch then idx
+      else char_index_helper ch (idx + 1) rest
+[@@measure Ordinal.of_int (LString.length chars)]
+
+let char_index (ch : LChar.t) : int =
+  char_index_helper ch 0 {l|abcdefghijklmnopqrstuvwxyz|l}
+
+let count_char_frequencies (text : LString.t) : int list =
+  let initial_counts = List.map (fun _ -> 0) (0 -- 25) in
+  List.fold_left
+    (fun counts ch ->
+      let idx = char_index ch in
+      List.mapi (fun i count -> if i = idx then count + 1 else count) counts)
+    initial_counts
+    text
+
+let rec reduce_once_helper (max_freq : int) (found : bool) (freqs : int list) : int list =
+  match freqs with
+  | [] -> []
+  | f :: rest ->
+      if not found && f = max_freq then
+        (f - 1) :: reduce_once_helper max_freq true rest
+      else
+        f :: reduce_once_helper max_freq found rest
+[@@measure Ordinal.of_int (List.length freqs)]
+
+let reduce_once (max_freq : int) (freqs : int list) : int list =
+  reduce_once_helper max_freq false freqs
+
+let rec reduce_max_frequency (frequencies : int list) (remaining : int) : int list =
+  if remaining <= 0 then
+    frequencies
+  else
+    let max_freq = List.fold_left max 0 frequencies in
+    let reduced = reduce_once max_freq frequencies in
+    reduce_max_frequency reduced (remaining - 1)
+[@@measure Ordinal.of_int remaining]
+
+let calculate_sum_of_squares (frequencies : int list) : int =
+  List.fold_left (fun acc freq -> acc + freq * freq) 0 frequencies
+
+let minimize_character_squares (text : LString.t) (removals : int) : int =
+  let length = LString.length text in
+  if removals >= length then
+    0
+  else
+    let char_counts = count_char_frequencies text in
+    let reduced_counts = reduce_max_frequency char_counts removals in
+    calculate_sum_of_squares reduced_counts

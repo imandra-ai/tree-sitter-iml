@@ -1,0 +1,22 @@
+(* Helper function to calculate sum of digits *)
+let rec sum_of_digits (num : int) : int =
+  if num = 0 then 0
+  else (num mod 10) + sum_of_digits (num / 10)
+
+(* Find nth number whose digits sum to 10 
+   Since this is an unbounded search with no clear termination measure,
+   we use [@@no_validate] *)
+let rec find_nth_with_digit_sum_10_helper (candidate : int) (matches_found : int) (n : int) : int =
+  if matches_found >= n then
+    candidate - 1
+  else
+    let digit_sum = sum_of_digits candidate in
+    let new_matches = if digit_sum = 10 then matches_found + 1 else matches_found in
+    find_nth_with_digit_sum_10_helper (candidate + 1) new_matches n
+[@@no_validate]
+
+let find_nth_with_digit_sum_10 (n : int) : int =
+  if n <= 0 then
+    -1
+  else
+    find_nth_with_digit_sum_10_helper 0 0 n
