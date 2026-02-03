@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+#!/usr/bin/env uv run
+#
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "tree-sitter",
+#     "tree-sitter-iml",
+# ]
+#
+# [tool.uv.sources]
+# tree-sitter-iml = { path = "../", editable = true }
+# ///
+
 # pyright: basic
 """Generate .tree files from .iml files using tree-sitter-iml parser.
 
@@ -43,6 +55,7 @@ Example output:
           ): ')'
 """
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -68,7 +81,7 @@ def format_tree(
     prefix = "  " * indent
 
     # Build the label: "field_name (node_type)" or just "node_type"
-    if field_name:
+    if field_name:  # noqa: F841
         label = f"{field_name} ({node.type})"
     else:
         label = node.type
