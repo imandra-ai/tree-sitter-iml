@@ -976,6 +976,10 @@
         "named": true
       },
       {
+        "type": "qcheck_statement",
+        "named": true
+      },
+      {
         "type": "quoted_item_extension",
         "named": true
       },
@@ -4924,6 +4928,36 @@
     }
   },
   {
+    "type": "qcheck_statement",
+    "named": true,
+    "fields": {
+      "expression": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "quoted_extension",
     "named": true,
     "fields": {},
@@ -6431,6 +6465,10 @@
   },
   {
     "type": "private",
+    "named": false
+  },
+  {
+    "type": "qcheck",
     "named": false
   },
   {

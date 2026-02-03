@@ -1,0 +1,27 @@
+(* Computes the smallest power of 2 that is greater than or equal to the given value.
+   Since bitwise operations are not available in IML, we use integer arithmetic. *)
+
+let rec count_bits_helper (temp_value : int) (bit_count : int) : int =
+  if temp_value = 0 then
+    bit_count
+  else
+    count_bits_helper (temp_value / 2) (bit_count + 1)
+[@@measure Ordinal.of_int temp_value]
+
+let rec find_largest_power (power : int) (value : int) : int =
+  if power * 2 > value then
+    power
+  else
+    find_largest_power (power * 2) value
+[@@no_validate]
+
+let next_power_of_two (value : int) : int =
+  if value <= 0 then
+    1
+  else
+    let largest = find_largest_power 1 value in
+    if largest = value then
+      value
+    else
+      let bit_count = count_bits_helper value 0 in
+      Int.pow 2 bit_count
