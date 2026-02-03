@@ -34,7 +34,7 @@ generate:
 # IML specific
 # ====================
 
-generate-iml:  ## Regenerate IML parser from grammar.js
+generate-iml:  ## Regenerate IML parser from grammar.js (Use gmake if errors occur)
 	$(MAKE) -C grammars/iml generate
 
 build-iml:  ## Build IML parser library (libtree-sitter-iml.a/.dylib)
