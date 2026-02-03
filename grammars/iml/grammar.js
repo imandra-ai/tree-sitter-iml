@@ -150,6 +150,7 @@ module.exports = grammar({
       'verify',
       'instance',
       'eval',
+      'qcheck',
       'while',
       'with',
       'lor',
@@ -265,6 +266,7 @@ module.exports = grammar({
       $.verify_statement,
       $.instance_statement,
       $.eval_statement,
+      $.qcheck_statement,
     ),
 
     value_definition: $ => seq(
@@ -561,6 +563,13 @@ module.exports = grammar({
 
     eval_statement: $ => seq(
       'eval',
+      optional($._attribute),
+      field('expression', $._sequence_expression),
+      repeat($.item_attribute),
+    ),
+
+    qcheck_statement: $ => seq(
+      'qcheck',
       optional($._attribute),
       field('expression', $._sequence_expression),
       repeat($.item_attribute),
