@@ -47,14 +47,14 @@ build-python:  ## Build python package
 	rm -rf ./dist/tree_sitter_iml-*
 	uv build
 
-publish-python-testpypi:  ## Publish python package to testpypi
+publish-python-testpypi: build-python  ## Publish python package to testpypi
 	uv publish \
 	--index testpypi \
 	-u __token__ \
 	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
 	dist/tree_sitter_iml-*
 
-publish-python-pypi:  ## Publish python package to pypi
+publish-python-pypi: build-python ## Publish python package to pypi
 	uv publish \
 	--index pypi \
 	-u __token__ \
