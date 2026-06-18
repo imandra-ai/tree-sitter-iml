@@ -31,6 +31,13 @@
   "then" "to" "try" "type" "val" "virtual" "when" "while" "with"
 ] @keyword
 
+; IML-specific keywords
+;----------------------
+
+[
+  "axiom" "theorem" "lemma" "verify" "instance" "eval" "test" "qcheck"
+] @keyword
+
 ; Operators
 ;----------
 

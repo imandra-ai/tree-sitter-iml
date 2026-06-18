@@ -984,6 +984,10 @@
         "named": true
       },
       {
+        "type": "test_statement",
+        "named": true
+      },
+      {
         "type": "theorem_definition",
         "named": true
       },
@@ -5399,6 +5403,36 @@
     }
   },
   {
+    "type": "test_statement",
+    "named": true,
+    "fields": {
+      "expression": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "then_clause",
     "named": true,
     "fields": {
@@ -6489,6 +6523,10 @@
   },
   {
     "type": "struct",
+    "named": false
+  },
+  {
+    "type": "test",
     "named": false
   },
   {
