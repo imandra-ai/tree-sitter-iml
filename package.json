@@ -1,8 +1,8 @@
 {
-  "name": "tree-sitter-ocaml",
-  "version": "0.25.0",
-  "description": "OCaml grammar for tree-sitter",
-  "repository": "https://github.com/tree-sitter/tree-sitter-ocaml",
+  "name": "tree-sitter-iml",
+  "version": "0.27.0",
+  "description": "IML (Imandra Modeling Language) grammar for tree-sitter",
+  "repository": "https://github.com/imandra-ai/tree-sitter-iml",
   "license": "MIT",
   "main": "bindings/node",
   "types": "bindings/node",
@@ -10,15 +10,14 @@
     "incremental",
     "parsing",
     "tree-sitter",
+    "iml",
     "ocaml"
   ],
   "files": [
     "binding.gyp",
     "bindings/node/*",
     "common/**",
-    "grammars/ocaml/src/**",
-    "grammars/interface/src/**",
-    "grammars/type/src/**",
+    "grammars/iml/src/**",
     "prebuilds/**",
     "queries/*",
     "*.wasm"
@@ -43,9 +42,9 @@
   "scripts": {
     "install": "node-gyp-build",
     "lint": "eslint grammars/*/grammar.js",
-    "generate": "for dir in grammars/ocaml grammars/interface grammars/type; do cd $dir; tree-sitter generate; cd -; done",
-    "prestart": "tree-sitter build grammars/ocaml --wasm -o grammars/ocaml/tree-sitter-ocaml.wasm",
-    "start": "tree-sitter playground --grammar-path grammars/ocaml",
+    "generate": "for dir in grammars/iml; do cd $dir; tree-sitter generate; cd -; done",
+    "prestart": "tree-sitter build grammars/iml --wasm -o grammars/iml/tree-sitter-iml.wasm",
+    "start": "tree-sitter playground --grammar-path grammars/iml",
     "test": "node --test bindings/node/*_test.js",
     "parse-examples": "test/parse-examples.sh"
   }
