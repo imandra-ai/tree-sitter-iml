@@ -12,8 +12,6 @@ permissions:
 jobs:
   github:
     uses: tree-sitter/workflows/.github/workflows/release.yml@main
-    with:
-      attestations: true
   pypi:
     uses: tree-sitter/workflows/.github/workflows/package-pypi.yml@main
     secrets:
