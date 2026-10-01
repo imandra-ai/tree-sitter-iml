@@ -1,0 +1,2 @@
+let s = "(* not a comment" (* real *)
+let x = 1

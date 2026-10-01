@@ -1,0 +1,4 @@
+let a = 1
+theorem t a x = x >. 0.0 ==> f a x [@@by auto]
+verify (fun x -> x = x)
+let b = 2

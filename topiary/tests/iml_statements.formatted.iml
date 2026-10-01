@@ -1,0 +1,17 @@
+theorem deposit_increases a x =
+  x >. 0.0 ==> (deposit a x).balance >. a.balance
+[@@by auto]
+
+lemma rev_len l = List.length (List.rev l) = List.length l [@@by induct ~on_fun: [%id List.rev] ()] [@@rw]
+
+verify (fun x y -> x + y = y + x)
+
+instance (fun (l : int list) -> List.length l > 3 && List.hd l = 7)
+
+let g x = if x > 10 then x - 1 else x + 1 [@@macro]
+
+[@@@decomp top "g"]
+
+eval (g 3)
+
+axiom ax x = x + 0 = x

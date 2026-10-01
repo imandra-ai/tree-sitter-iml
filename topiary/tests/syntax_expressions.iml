@@ -1,0 +1,28 @@
+let deposit (a : account) (x : real) : account =
+  if x <=. 0.0 then a
+  else { a with balance = a.balance +. x; history = (a.id, x) :: a.history }
+
+let rec insert x = function
+  | Leaf -> Node (Leaf, x, Leaf)
+  | Node (l, y, r) as t ->
+    if x < y then Node (insert x l, y, r)
+    else if x > y then Node (l, y, insert x r)
+    else t
+
+let sum_pos l = List.fold_left (fun acc x -> if x > 0 then acc + x else acc) 0 l
+
+let pipeline l = l |> List.map (fun x -> x * 2) |> List.filter (fun x -> x mod 3 = 0) |> List.length
+
+let neg x = -x + (-3) - (2 - 1) - 2 - 1
+
+let lst = [1; 2; 3] @ [4] @ (5 :: [])
+
+let f ~x ?(y = 3) () = x + y
+
+let nested a b =
+  let c = a + b in
+  let d =
+    let e = c * c in
+    e - 1
+  in
+  (c, d)

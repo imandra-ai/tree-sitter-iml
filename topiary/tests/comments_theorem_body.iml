@@ -1,0 +1,8 @@
+theorem t x y =
+  (* inside *)
+  x + y = y + x
+[@@by auto]
+
+let v x =
+  (* inside *)
+  x + 1

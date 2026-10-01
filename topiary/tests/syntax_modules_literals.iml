@@ -1,0 +1,15 @@
+module M = struct
+  type t = int
+  let zero : t = 0
+  let add (a : t) (b : t) : t = a + b
+end
+
+open M
+
+let s = "hello \"world\"\n" ^ String.of_int 3
+
+let c = 'x'
+
+let r = 1.5 +. 2e3
+
+let tup = (1, "a", [ (2, 3) ])

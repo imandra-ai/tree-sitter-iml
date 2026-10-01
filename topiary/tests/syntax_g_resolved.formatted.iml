@@ -1,0 +1,11 @@
+let rec g_resolved (t : trace) (g : gitem list) : int =
+  match g with
+  | [] -> 0
+  | it :: rest -> (if resolve_item t it = GDone then 1 else 0) + g_resolved t rest
+
+let rec g_total (g : gitem list) : int =
+  match g with [] -> 0 | _ :: rest -> 1 + g_total rest
+
+let g_progress (t : trace) (g : gitem list) : real =
+  if g_total g = 0 then 0.
+  else Real.(of_int (g_resolved t g) / of_int (g_total g))

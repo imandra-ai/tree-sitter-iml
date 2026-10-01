@@ -1,0 +1,26 @@
+(* Lexically tricky comments *)
+
+(* nested (* inner comment *) still outer *)
+let a = 1
+
+(* a string with a closer inside: "*)" is not the end *)
+let b = 2
+
+(* a char literal: '"' does not open a string *)
+let c = 3
+
+(* quoted string inside: {| *) |} *)
+let d = 4
+
+(**)
+let e = 5
+
+(***)
+let f = 6
+
+(*******************************************************)
+(* Banner                                              *)
+(*******************************************************)
+let g = 7
+
+let s = "(* not a comment *)"

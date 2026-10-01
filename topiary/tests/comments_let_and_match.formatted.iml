@@ -1,0 +1,13 @@
+let f x =
+  (* step one *)
+  let y = x + 1 in
+  (* step two *)
+  y * 2 (* result *)
+
+(** Documented function *)
+let h (x : int) : int =
+  match x with
+  | 0 -> 1 (* base *)
+  | n -> (* recursive case *) n * 2
+
+(* trailing comment at end of file *)

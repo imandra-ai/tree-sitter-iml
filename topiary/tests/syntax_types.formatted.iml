@@ -1,0 +1,11 @@
+(* Account model *)
+type status = Active | Frozen of string | Closed (* terminal *)
+
+type account = {
+  id: int; (* unique *)
+  balance: real;
+  status: status;
+  history: (int * real) list;
+}
+
+type 'a tree = Leaf | Node of 'a tree * 'a * 'a tree

@@ -1,0 +1,2 @@
+(** doc with "quote *)" *)
+let x = 1

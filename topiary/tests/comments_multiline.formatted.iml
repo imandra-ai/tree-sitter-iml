@@ -1,0 +1,24 @@
+(*
+   ASCII art must survive:
+
+        +-----+
+        | box |
+        +-----+
+            \
+             -->  next
+*)
+let x = 1
+
+let f y =
+  (* A multi-line comment
+     whose continuation lines
+       are deliberately indented *)
+  y + 1
+
+(* oddly indented own-line comment *)
+let z = 3
+
+(* comment after several blank lines *)
+
+let w = 4
+(* comment at end of file, no newline *)

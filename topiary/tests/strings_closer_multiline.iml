@@ -1,0 +1,3 @@
+(* "a string
+   spanning *) lines" *)
+let x = 1
