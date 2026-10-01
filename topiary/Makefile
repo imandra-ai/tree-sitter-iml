@@ -1,13 +1,18 @@
-# Snapshot tests for the Topiary IML formatter.
-#
-# Each test is a pair of files in tests/: <name>.iml (input) and <name>.formatted.iml
-# (expected output). Formatting <name>.iml writes <name>.out.iml, which is compared with
-# <name>.formatted.iml.
-#
-#   make test    format every input and compare; expected files are never changed
-#   make diff    show the differences as unified diffs (expected -> actual)
-#   make promote accept the new output: copy each differing .out.iml over its .formatted.iml
-#   make clean   remove the generated .out.iml files
+.PHONY: help
+help:  ## Show this help (usage: make help)
+	@echo "Usage: make [recipe]"
+	@echo "Recipes:"
+	@awk '/^[a-zA-Z0-9_.-]+:.*?##/ { \
+		helpMessage = match($$0, /## (.*)/); \
+		if (helpMessage) { \
+			recipe = $$1; \
+			sub(/:/, "", recipe); \
+			printf "  \033[36m%-20s\033[0m %s\n", recipe, substr($$0, RSTART + 3, RLENGTH); \
+		} \
+	}' $(MAKEFILE_LIST)
+
+# Expect tests
+# ====================
 #
 # Limit any target to some tests with T, e.g. `make test T=comments_doc` or
 # `make diff T='iml_% strings_%'`.
@@ -36,7 +41,7 @@ $(TESTS_DIR)/%.out.iml: $(TESTS_DIR)/%.iml $(FORMATTER)
 	@./format.sh < $< > $@ || { rm -f $@; echo "ERROR $*: formatter failed (see above)"; }
 
 # Always reformat from scratch, so a new Topiary binary is picked up too.
-test:
+test:  ## format every input and compare; expected files are never changed
 	@rm -f $(OUTS)
 	@$(GENERATE)
 	@pass=0; fail=0; \
@@ -48,13 +53,13 @@ test:
 	echo "$$pass passed, $$fail failed"; \
 	[ $$fail -eq 0 ] || { echo "Run 'make diff' to see the changes, 'make promote' to accept them."; exit 1; }
 
-diff:
+diff:  ## show the differences as unified diffs (expected -> actual)
 	@$(GENERATE)
 	@for f in $(INPUTS); do n=$${f%.iml}; \
 	  [ -f $$n.out.iml ] && diff -uN $$n.formatted.iml $$n.out.iml; \
 	done; true
 
-promote:
+promote:  ## accept the new output: copy each differing .out.iml over its .formatted.iml
 	@$(GENERATE)
 	@for f in $(INPUTS); do n=$${f%.iml}; \
 	  if [ ! -f $$n.out.iml ]; then echo "skipped $$n: formatter failed"; \
@@ -62,5 +67,5 @@ promote:
 	    cp $$n.out.iml $$n.formatted.iml && echo "updated $$n.formatted.iml"; fi; \
 	done
 
-clean:
+clean:  ## remove the generated .out.iml files
 	rm -f $(TESTS_DIR)/*.out.iml
