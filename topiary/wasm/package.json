@@ -1,0 +1,23 @@
+{
+  "name": "imlformat-wasm",
+  "version": "0.1.0",
+  "description": "The Topiary IML formatter, compiled to WebAssembly",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "dist/imlformat_wasm.js",
+    "dist/imlformat_wasm_bg.wasm",
+    "dist/tree-sitter-iml.wasm"
+  ],
+  "scripts": {
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "web-tree-sitter": "0.21.0"
+  }
+}

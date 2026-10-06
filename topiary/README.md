@@ -53,17 +53,18 @@ TOPIARY_LANGUAGE_DIR=$PWD/queries topiary -C languages.ncl format --language iml
 
 Core files:
 
-| File                    | Purpose                                                                |
-| ----------------------- | ---------------------------------------------------------------------- |
-| `languages.ncl`         | Topiary configuration declaring the `iml` language and its grammar     |
-| `iml-extra.scm`         | Hand-written formatting rules for IML-only syntax.                     |
-| `queries/iml.scm`       | The query Topiary loads. Generated                                     |
-| `update-queries.sh`     | Regenerates `queries/iml.scm`                                          |
-| `imlformat.sh`          | Wrapper that finds the grammar for your platform and runs Topiary      |
-| `imlformat-prettier.sh` | Runs the prettier-based formatter from imandrax-vscode, for comparison |
-| `imlformat-cli.sh`      | Command-line handling shared by both scripts (paths, `--check`, `--diff`) |
-| `tests/`                | -                                                                      |
-| `Makefile`              | -                                                                      |
+| File                    | Purpose                                                                    |
+| ----------------------- | -------------------------------------------------------------------------- |
+| `languages.ncl`         | Topiary configuration declaring the `iml` language and its grammar         |
+| `iml-extra.scm`         | Hand-written formatting rules for IML-only syntax.                         |
+| `queries/iml.scm`       | The query Topiary loads. Generated                                         |
+| `update-queries.sh`     | Regenerates `queries/iml.scm`                                              |
+| `imlformat.sh`          | Wrapper that finds the grammar for your platform and runs Topiary          |
+| `imlformat-prettier.sh` | Runs the prettier-based formatter from imandrax-vscode, for comparison     |
+| `imlformat-cli.sh`      | Command-line handling shared by both scripts (paths, `--check`, `--diff`)  |
+| `wasm/`                 | The same formatter compiled to WebAssembly, for browsers, Node and VS Code |
+| `tests/`                | -                                                                          |
+| `Makefile`              | -                                                                          |
 
 ## Comparing with the prettier-based formatter
 

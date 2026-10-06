@@ -1,0 +1,28 @@
+diff -ru a/src/error.rs b/src/error.rs
+--- a/src/error.rs
++++ b/src/error.rs
+@@ -255,7 +255,8 @@
+             )
+             .with_language(span.language),
+             span: span.source_span(),
+-            range: span.range,
++            // `Range` is not `Copy` in the web-tree-sitter facade.
++            range: span.range.clone(),
+         }
+     }
+ }
+diff -ru a/src/tree_sitter.rs b/src/tree_sitter.rs
+--- a/src/tree_sitter.rs
++++ b/src/tree_sitter.rs
+@@ -417,7 +417,11 @@
+             range: node.range(),
+             content: None,
+             location: None,
++            // The web-tree-sitter facade has no `language_name`; it only labels error spans.
++            #[cfg(not(target_arch = "wasm32"))]
+             language: node.language_name().unwrap_or_default(),
++            #[cfg(target_arch = "wasm32")]
++            language: "",
+         }
+     }
+     /// Creates a [`SourceSpan`] from the node's byte range
