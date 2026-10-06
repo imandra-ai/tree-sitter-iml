@@ -25,7 +25,7 @@ endif
 OUTS := $(INPUTS:.iml=.out.iml)
 
 # Outputs are regenerated when any of these change.
-FORMATTER := ../imlformat.sh ../languages.ncl ../queries/iml.scm \
+FORMATTER := ../imlformat.sh ../imlformat-cli.sh ../languages.ncl ../queries/iml.scm \
 	$(wildcard ../../grammars/iml/libtree-sitter-iml.*)
 
 # Build every stale output. A test whose formatting fails gets no .out.iml; the error is
@@ -38,7 +38,7 @@ outputs: $(OUTS)
 	@:
 
 %.out.iml: %.iml $(FORMATTER)
-	@../imlformat.sh < $< > $@ || { rm -f $@; echo "ERROR $*: formatter failed (see above)"; }
+	@../imlformat.sh - < $< > $@ || { rm -f $@; echo "ERROR $*: formatter failed (see above)"; }
 
 # Always reformat from scratch, so a new Topiary binary is picked up too.
 test:  ## format every input and compare; expected files are never changed

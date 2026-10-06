@@ -25,16 +25,24 @@ that re-prints an AST, it won't drop parentheses, list brackets, string escapes 
 ## Usage
 
 ```bash
-imlformat file.iml              # print the formatted file to stdout
-imlformat < in.iml > out.iml    # read stdin, write the result to out.iml
-imlformat -i file.iml ...       # format files in place
+imlformat                       # format every *.iml under the current directory in place
+imlformat src/ a.iml            # format the given directories and files in place
+imlformat - < in.iml > out.iml  # read stdin, write the result to out.iml
+imlformat --check               # don't write; exit 1 if any file would be reformatted
+imlformat --diff a.iml          # don't write; print a unified diff, exit 1 if anything would change
 ```
 
+Directories are searched recursively for `*.iml`, skipping hidden directories and
+`node_modules`. Exit status is 0 on success, 1 when `--check`/`--diff` find files that would
+change, and 2 on a usage error or a file that failed to format. `imlformat --help` has the
+details.
+
 Extra Topiary options go through `TOPIARY_ARGS`, e.g.
-`TOPIARY_ARGS=-v imlformat file.iml`.
+`TOPIARY_ARGS=-v imlformat a.iml`.
 
 Topiary refuses to format input that doesn't parse, and it checks that formatting the result
-again changes nothing (idempotence). In both cases it exits non-zero and leaves files unchanged.
+again changes nothing (idempotence). Either way, that file is reported and left unchanged,
+the other files are still formatted, and the exit status is 2.
 
 ## Dev
 
@@ -53,6 +61,7 @@ Core files:
 | `update-queries.sh`     | Regenerates `queries/iml.scm`                                          |
 | `imlformat.sh`          | Wrapper that finds the grammar for your platform and runs Topiary      |
 | `imlformat-prettier.sh` | Runs the prettier-based formatter from imandrax-vscode, for comparison |
+| `imlformat-cli.sh`      | Command-line handling shared by both scripts (paths, `--check`, `--diff`) |
 | `tests/`                | -                                                                      |
 | `Makefile`              | -                                                                      |
 
@@ -60,7 +69,7 @@ Core files:
 
 `imlformat-prettier.sh` runs the experimental prettier-based formatter from imandrax-vscode
 (`imlformat/`, VS Code setting `imandrax.IMLFormatter`) with the same options as the
-extension. It has the same interface as `imlformat.sh`, including `-i`.
+extension. It has the same command line as `imlformat.sh`.
 
 It expects the imandrax-vscode repo next to this one (`../../imandrax-vscode` from this folder), with `npm install` already run.
 
