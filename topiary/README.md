@@ -44,6 +44,25 @@ Topiary refuses to format input that doesn't parse, and it checks that formattin
 again changes nothing (idempotence). Either way, that file is reported and left unchanged,
 the other files are still formatted, and the exit status is 2.
 
+### VSCode setup
+
+
+```json
+// settings.json
+    "[imandrax]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "jkillian.custom-local-formatters",
+    },
+    "customLocalFormatters.formatters": [
+        {
+            "command": "imlformat -",
+            "languages": [
+                "imandrax",
+            ]
+        }
+    ],
+```
+
 ## Dev
 
 ```bash
