@@ -9,60 +9,63 @@ explicit query rules (e.g. adding or removing the optional leading `|` in `match
 cases), the source text of every token is copied through unchanged. So, unlike a formatter
 that re-prints an AST, it won't drop parentheses, list brackets, string escapes or comments.
 
-## Requirements
+## Install
 
-- **Topiary CLI 0.7.x** (tested with v0.7.3). Download a binary from the
-  [releases page](https://github.com/tweag/topiary/releases), or `cargo install topiary-cli`.
-  Set `TOPIARY=/path/to/topiary` if it's not on your `PATH`.
-- **The compiled IML grammar** at `../grammars/iml/libtree-sitter-iml.{dylib,so}`.
-  The macOS library is committed; on other platforms build it with
-  `cd grammars/iml && gmake`.
+1. Install the Topiary CLI 0.7.x (tested with v0.7.3):
+
+- Run `cargo install topiary-cli --version 0.7.3 --locked`, or
+- download a binary from the [releases page](https://github.com/tweag/topiary/releases)
+- Set `TOPIARY=/path/to/topiary` if it's not on your `PATH`.
+
+2. From this folder, run `make install`.
+
+- compiles the IML grammar library, `../grammars/iml/libtree-sitter-iml.{dylib,so}`
+- symlinks `imlformat.sh` to `~/.local/bin/imlformat` (respects `PREFIX` env var)
 
 ## Usage
 
 ```bash
-./format.sh path/to/file.iml ...   # format files in place
-./format.sh < in.iml > out.iml     # stdin to stdout
+imlformat file.iml              # print the formatted file to stdout
+imlformat < in.iml > out.iml    # read stdin, write the result to out.iml
+imlformat -i file.iml ...       # format files in place
 ```
 
-`format.sh` can be run from any directory. Extra Topiary options go through `TOPIARY_ARGS`,
-e.g. `TOPIARY_ARGS=-v ./format.sh file.iml`.
+Extra Topiary options go through `TOPIARY_ARGS`, e.g.
+`TOPIARY_ARGS=-v imlformat file.iml`.
 
 Topiary refuses to format input that doesn't parse, and it checks that formatting the result
 again changes nothing (idempotence). In both cases it exits non-zero and leaves files unchanged.
 
-To call Topiary directly instead, run it from this folder, because Topiary 0.7.x resolves the
-relative grammar path in `languages.ncl` against the current directory:
+## Dev
 
 ```bash
 cd topiary
 TOPIARY_LANGUAGE_DIR=$PWD/queries topiary -C languages.ncl format --language iml < file.iml
 ```
 
-### Comparing with the prettier-based formatter
+Core files:
 
-`format-prettier.sh` runs the experimental prettier-based formatter from imandrax-vscode
+| File                    | Purpose                                                                |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `languages.ncl`         | Topiary configuration declaring the `iml` language and its grammar     |
+| `iml-extra.scm`         | Hand-written formatting rules for IML-only syntax.                     |
+| `queries/iml.scm`       | The query Topiary loads. Generated                                     |
+| `update-queries.sh`     | Regenerates `queries/iml.scm`                                          |
+| `imlformat.sh`          | Wrapper that finds the grammar for your platform and runs Topiary      |
+| `imlformat-prettier.sh` | Runs the prettier-based formatter from imandrax-vscode, for comparison |
+| `tests/`                | -                                                                      |
+| `Makefile`              | -                                                                      |
+
+## Comparing with the prettier-based formatter
+
+`imlformat-prettier.sh` runs the experimental prettier-based formatter from imandrax-vscode
 (`imlformat/`, VS Code setting `imandrax.IMLFormatter`) with the same options as the
-extension. It has the same interface as `format.sh`.
+extension. It has the same interface as `imlformat.sh`, including `-i`.
 
-It expects the imandrax-vscode repo next to this one (`../../imandrax-vscode` from this folder), with `npm install` already run. 
+It expects the imandrax-vscode repo next to this one (`../../imandrax-vscode` from this folder), with `npm install` already run.
 
-Like the extension, its output has no trailing newline, so ignore that difference when comparing. 
+Like the extension, its output has no trailing newline, so ignore that difference when comparing.
 Because it re-prints the AST, it can silently change what the code means.
-
-## Core files
-
-| File | Purpose |
-|---|---|
-| `languages.ncl` | Topiary configuration declaring the `iml` language and its grammar |
-| `iml-extra.scm` | Hand-written formatting rules for IML-only syntax. **Edit this one.** |
-| `queries/iml.scm` | The query Topiary loads. **Generated**: don't edit by hand |
-| `update-queries.sh` | Regenerates `queries/iml.scm` |
-| `format.sh` | Wrapper that finds the grammar for your platform and runs Topiary |
-| `format-prettier.sh` | Runs the prettier-based formatter from imandrax-vscode, for comparison |
-| `tests/` | Snapshot tests: `<name>.iml` inputs and `<name>.formatted.iml` expected outputs |
-| `Makefile` | Runs the snapshot tests: `make test`, `make diff`, `make promote` |
-| `LICENSE-topiary` | Topiary's MIT licence, which covers the OCaml rules in `queries/iml.scm` |
 
 ## How the query is built
 
@@ -79,10 +82,6 @@ the IML grammar, and appends `iml-extra.scm`:
    when the statement spans several lines, and attributes on their own line.
 3. **Toplevel directives** (`#show foo`): keeps the space after the directive name. Without
    this rule Topiary prints `#showfoo`. That bug is in Topiary's own OCaml rules too.
-
-## Testing
-
-Expect-test is used. See `tests/` dir and relevant Make recipes.
 
 ## Known limitations
 

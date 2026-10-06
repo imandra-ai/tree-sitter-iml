@@ -11,6 +11,42 @@ help:  ## Show this help (usage: make help)
 		} \
 	}' $(MAKEFILE_LIST)
 
+# Install
+# ====================
+#
+# Links imlformat.sh onto PATH as `imlformat`, building the grammar library first if needed.
+# The link points into this checkout, so keep the repo where it is.
+
+PREFIX ?= $(HOME)/.local
+BINDIR := $(PREFIX)/bin
+GRAMMAR_SRC := ../grammars/iml/src
+ifeq ($(shell uname -s),Darwin)
+GRAMMAR_LIB := ../grammars/iml/libtree-sitter-iml.dylib
+SHARED_FLAG := -dynamiclib
+else
+GRAMMAR_LIB := ../grammars/iml/libtree-sitter-iml.so
+SHARED_FLAG := -shared
+endif
+
+.PHONY: install uninstall grammar
+
+grammar: $(GRAMMAR_LIB)  ## build the IML grammar library that imlformat.sh loads
+
+# Compiled directly rather than via grammars/iml/Makefile, whose common.mak needs GNU make 4
+# (macOS ships 3.81). Only the shared library is needed here.
+$(GRAMMAR_LIB): $(GRAMMAR_SRC)/parser.c $(GRAMMAR_SRC)/scanner.c
+	$(CC) $(SHARED_FLAG) -fPIC -O2 -std=c11 -I$(GRAMMAR_SRC) -I../common $^ -o $@
+
+install: grammar  ## link `imlformat` into $(PREFIX)/bin (default ~/.local/bin)
+	@command -v $${TOPIARY:-topiary} >/dev/null || \
+	  echo "warning: topiary not found on PATH; install it with 'cargo install topiary-cli --version 0.7.3 --locked'"
+	install -d '$(BINDIR)'
+	ln -sf '$(CURDIR)/imlformat.sh' '$(BINDIR)/imlformat'
+	@echo "Installed $(BINDIR)/imlformat"
+
+uninstall:  ## remove the `imlformat` link
+	rm -f '$(BINDIR)/imlformat'
+
 # Expect tests
 # ====================
 #
@@ -25,7 +61,7 @@ endif
 OUTS := $(INPUTS:.iml=.out.iml)
 
 # Outputs are regenerated when any of these change.
-FORMATTER := format.sh languages.ncl queries/iml.scm \
+FORMATTER := imlformat.sh languages.ncl queries/iml.scm \
 	$(wildcard ../grammars/iml/libtree-sitter-iml.*)
 
 # Build every stale output. A test whose formatting fails gets no .out.iml; the error is
@@ -38,7 +74,7 @@ outputs: $(OUTS)
 	@:
 
 $(TESTS_DIR)/%.out.iml: $(TESTS_DIR)/%.iml $(FORMATTER)
-	@./format.sh < $< > $@ || { rm -f $@; echo "ERROR $*: formatter failed (see above)"; }
+	@./imlformat.sh < $< > $@ || { rm -f $@; echo "ERROR $*: formatter failed (see above)"; }
 
 # Always reformat from scratch, so a new Topiary binary is picked up too.
 test:  ## format every input and compare; expected files are never changed

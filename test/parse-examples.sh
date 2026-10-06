@@ -11,23 +11,23 @@ add_pattern() {
   pattern=$1
   first=$2
 
-  if [[ "$pattern" == !* ]]; then
+  if [[ "${pattern}" == !* ]]; then
     exclusions+=("!" "-path" "${pattern:1}")
-  elif [[ "$first" == true ]]; then
-    inclusions+=("-path" $pattern)
+  elif [[ "${first}" == true ]]; then
+    inclusions+=("-path" "${pattern}")
   else
-    inclusions+=("-o" "-path" $pattern)
+    inclusions+=("-o" "-path" "${pattern}")
   fi
 }
 
 first=true
-while read pattern; do
-  add_pattern $pattern $first
+while read -r pattern; do
+  add_pattern "${pattern}" "${first}"
   first=false
 done < test/files.txt
 
-while read pattern; do
-  exclusions+=("!" "-path" "$pattern")
+while read -r pattern; do
+  exclusions+=("!" "-path" "${pattern}")
 done < test/invalid-files.txt
 
 tree-sitter parse -q -s --paths <(find examples -type f \( "${inclusions[@]}" \) "${exclusions[@]}")
