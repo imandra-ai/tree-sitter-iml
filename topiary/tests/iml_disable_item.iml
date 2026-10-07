@@ -1,0 +1,22 @@
+let  f x =
+    x   +   1
+  [@@imlformat "disable"]
+
+let  g x =
+    x   +   1
+
+let  h x =   x
+and  k y =   y [@@imlformat "disable"]
+
+type  t =   A |  B [@@imlformat "disable"]
+
+theorem  foo x =   x = x [@@imlformat "disable"]
+
+verify   (fun x -> x   = x) [@@imlformat "disable"]
+
+let  n x =   x [@@imlformat "enable"]
+
+module M = struct
+let  x =   1 [@@imlformat "disable"]
+let  y =   1
+end

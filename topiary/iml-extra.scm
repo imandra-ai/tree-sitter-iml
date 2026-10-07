@@ -177,3 +177,132 @@
     (toplevel_directive)
   ]
 )
+
+; Floating attributes (`[@@@import M, "m.iml"]`) sit on their own line. Topiary's OCaml
+; rules add no line break before or after them, so they would be joined onto the line of
+; the neighbouring item. As above, the next item is listed explicitly so a trailing
+; comment stays put.
+(
+  [
+    (value_definition)
+    (external)
+    (type_definition)
+    (exception_definition)
+    (module_definition)
+    (module_type_definition)
+    (open_module)
+    (include_module)
+    (class_definition)
+    (class_type_definition)
+    (item_extension)
+    (quoted_item_extension)
+    (toplevel_directive)
+  ] @append_hardline
+  .
+  (floating_attribute)
+)
+(compilation_unit
+  (floating_attribute) @append_hardline
+  .
+  [
+    (value_definition)
+    (external)
+    (type_definition)
+    (exception_definition)
+    (module_definition)
+    (module_type_definition)
+    (open_module)
+    (include_module)
+    (class_definition)
+    (class_type_definition)
+    (floating_attribute)
+    (item_extension)
+    (quoted_item_extension)
+    (toplevel_directive)
+  ]
+)
+(structure
+  (floating_attribute) @append_hardline
+  .
+  [
+    (value_definition)
+    (external)
+    (type_definition)
+    (exception_definition)
+    (module_definition)
+    (module_type_definition)
+    (open_module)
+    (include_module)
+    (class_definition)
+    (class_type_definition)
+    (floating_attribute)
+    (item_extension)
+    (quoted_item_extension)
+    (axiom_definition)
+    (theorem_definition)
+    (lemma_definition)
+    (verify_statement)
+    (instance_statement)
+    (eval_statement)
+    (test_statement)
+    (qcheck_statement)
+  ]
+)
+
+; Opting out of formatting
+; ========================
+
+; `[@@imlformat "disable"]` on an item keeps that item exactly as written. For `let`,
+; `type` and `module` the attribute belongs to one binding, but the whole item is kept.
+(
+  [
+    (value_definition
+      (let_binding
+        (item_attribute (attribute_id) @_id (attribute_payload) @_payload)))
+    (type_definition
+      (type_binding
+        (item_attribute (attribute_id) @_id (attribute_payload) @_payload)))
+    (module_definition
+      (module_binding
+        (item_attribute (attribute_id) @_id (attribute_payload) @_payload)))
+    (external
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (exception_definition
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (module_type_definition
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (open_module
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (include_module
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (axiom_definition
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (theorem_definition
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (lemma_definition
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (verify_statement
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (instance_statement
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (eval_statement
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (test_statement
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (qcheck_statement
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+  ] @leaf
+  (#eq? @_id "imlformat")
+  (#eq? @_payload "\"disable\"")
+)
+
+; `[@@@imlformat "disable"]` as the first item of a file (only comments may come before
+; it) keeps the whole file exactly as written.
+(compilation_unit
+  .
+  (comment)*
+  .
+  (floating_attribute (attribute_id) @_id (attribute_payload) @_payload)
+  (#eq? @_id "imlformat")
+  (#eq? @_payload "\"disable\"")
+) @leaf

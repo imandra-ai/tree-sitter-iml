@@ -1,0 +1,7 @@
+(* Generated, keep the alignment. *)
+[@@@imlformat "disable"]
+let  x   =  1
+let  yy  =  2
+
+
+let z=3

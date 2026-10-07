@@ -21,6 +21,7 @@ that re-prints an AST, it won't drop parentheses, list brackets, string escapes 
 
 ## Usage
 
+Direct CLI usage:
 ```bash
 imlformat                       # format every *.iml under the current directory in place
 imlformat src/ a.iml            # format the given directories and files in place
@@ -37,12 +38,9 @@ details.
 Extra Topiary options go through `TOPIARY_ARGS`, e.g.
 `TOPIARY_ARGS=-v imlformat a.iml`.
 
-Topiary refuses to format input that doesn't parse, and it checks that formatting the result
-again changes nothing (idempotence). Either way, that file is reported and left unchanged,
-the other files are still formatted, and the exit status is 2.
-
 ### VSCode setup
 
+[Custom Local Formatters](https://github.com/JKillian/vscode-custom-local-formatters) extension needs to be installed
 
 ```json
 // settings.json
@@ -59,6 +57,18 @@ the other files are still formatted, and the exit status is 2.
         }
     ],
 ```
+
+### Turning formatting off
+
+```ocaml
+let table = [ 1;  2;  3
+            ; 10; 20; 30 ] [@@imlformat "disable"]
+```
+
+- `[@@imlformat "disable"]` on an item (`let`, `type`, `module`, `theorem`, `verify`, ...)
+keeps the whole item as written. 
+- `[@@@imlformat "disable"]` as the first item of a file (only comments may come before it) disables formatting for the whole file.
+  - NOTE: the location of `[@@@imlformat "disable"]` is more restricted than `[@@@ocamlformat "disable"]`. `[@@@imlformat "enable"]` doesn't exist either.
 
 ## Dev
 

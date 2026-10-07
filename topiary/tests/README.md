@@ -24,6 +24,10 @@ The prefix gives the category:
 | `iml_adjacent_lines` | Statements on adjacent lines stay on their own lines; Topiary doesn't glue them together or insert blank lines between them. |
 | `iml_multiline_theorem` | A multi-line theorem gets its body indented under `=`. |
 | `iml_directives` | Toplevel directives keep the space after the directive name (Topiary's own OCaml rules print `#showfoo`). |
+| `iml_floating_attributes` | Floating attributes (`[@@@import ...]`) stay on their own line, at the top level and in a `struct`; a trailing comment stays on the same line. |
+| `iml_disable_item` | `[@@imlformat "disable"]` keeps that item as written (for `let ... and`, the whole definition); the other items are still formatted. |
+| `iml_disable_file` | `[@@@imlformat "disable"]` as the first item (after comments) keeps the whole file as written. |
+| `iml_disable_file_not_first` | `[@@@imlformat "disable"]` anywhere else has no effect. |
 | `comments_let_and_match` | Comments before, inside and after a `let`, and on match cases. |
 | `comments_expressions` | Comments between tokens of expressions, inside parentheses, tuples, lists, records and functions. Known change from Topiary's OCaml rules: the comment after `print x;` moves onto its own line. |
 | `comments_patterns` | Comments in match cases, guards and patterns. |

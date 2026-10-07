@@ -1,0 +1,13 @@
+[@@@import Folding, "folding.iml"]
+open Folding
+[@@@a] [@@@b]
+let x = 1
+[@@@c] (* stays here *)
+type t = int
+[@@@d]
+
+module M = struct
+[@@@e]
+let y = 1
+[@@@f]
+end
