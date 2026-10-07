@@ -11,16 +11,13 @@ that re-prints an AST, it won't drop parentheses, list brackets, string escapes 
 
 ## Install
 
-1. Install the Topiary CLI 0.7.x (tested with v0.7.3):
+1. Install the Topiary CLI 0.7.x with `cargo install topiary-cli --version 0.7.3 --locked`
+  - Alternatively, download a binary from the [releases page](https://github.com/tweag/topiary/releases)
+  - Set `TOPIARY=/path/to/topiary` if it's not on your `PATH`.
 
-- Run `cargo install topiary-cli --version 0.7.3 --locked`, or
-- download a binary from the [releases page](https://github.com/tweag/topiary/releases)
-- Set `TOPIARY=/path/to/topiary` if it's not on your `PATH`.
-
-2. From this folder, run `make install`.
-
-- compiles the IML grammar library, `../grammars/iml/libtree-sitter-iml.{dylib,so}`
-- symlinks `imlformat.sh` to `~/.local/bin/imlformat` (respects `PREFIX` env var)
+2. From this directory, run `make install`.
+  - compiles the IML grammar library, `../grammars/iml/libtree-sitter-iml.{dylib,so}`
+  - symlinks `imlformat.sh` to `~/.local/bin/imlformat` (respects `PREFIX` env var)
 
 ## Usage
 
