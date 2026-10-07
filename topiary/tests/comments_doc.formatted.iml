@@ -1,0 +1,17 @@
+(** Module-level floating doc comment. *)
+
+(** Doc for [area]. *)
+let area w h = w * h
+
+let perimeter w h = 2 * (w + h)
+(** Doc after the definition. *)
+
+(** Multi-line doc comment:
+    - first point
+    - second point
+
+    {[ let example = area 2 3 ]} *)
+let volume w h d = area w h * d
+
+(** Doc on a type *)
+type shape = Square of int (** Doc on constructor *) | Circle of int

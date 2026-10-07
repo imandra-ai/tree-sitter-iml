@@ -1,0 +1,27 @@
+let f x =
+  (* before let *)
+  let y = (* after = *) x + 1 (* after body *) in
+  (* before in-body *)
+  y * (* between operator and operand *) 2
+
+let g x =
+  if (* cond *) x > 0 (* after cond *)
+  then (* then *) x
+  else (* else *) -x
+
+let h x = f (* arg 1 *) x (* arg 2 *) (g x)
+
+let k = ((* inside parens *) 1 + 2)
+
+let tup = (1, (* second *) 2, 3 (* last *))
+
+let lst = [1; (* two *) 2; 3 (* three *)]
+
+let rcd = {a = 1; (* b field *) b = 2}
+
+let fn = fun (* param *) x -> (* body *) x + 1
+
+let seq x =
+  print x;
+  (* after first *)
+  print x

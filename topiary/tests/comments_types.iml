@@ -1,0 +1,16 @@
+type color =
+  | Red (* warm *)
+  | Green
+  (* own-line before Blue *)
+  | Blue of (* payload *) int
+
+type point = {
+  x : real; (* horizontal *)
+  (* own-line before y *)
+  y : real;
+  z : (* depth *) real;
+}
+
+type fn = int (* arg *) -> (* result *) bool
+
+type 'a pair = (* left *) 'a * (* right *) 'a

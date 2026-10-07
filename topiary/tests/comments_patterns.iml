@@ -1,0 +1,15 @@
+let classify n =
+  match n with
+  (* before first case *)
+  | 0 -> "zero" (* trailing on case *)
+  (* between cases *)
+  | 1 ->
+    (* inside case body *)
+    "one"
+  | n when (* guard *) n < 0 -> "neg"
+  | _ (* wildcard *) -> "many"
+  (* after last case *)
+
+let rec len = function
+  | [] -> 0 (* empty *)
+  | _ :: (* tail *) tl -> 1 + len tl

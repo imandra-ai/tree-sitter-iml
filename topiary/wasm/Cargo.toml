@@ -1,0 +1,34 @@
+[package]
+name = "imlformat-wasm"
+description = "The Topiary IML formatter, compiled to WebAssembly"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+js-sys = "0.3"
+topiary-core = "=0.7.3"
+topiary-tree-sitter-facade = "=0.7.3"
+topiary-web-tree-sitter-sys = "=0.7.3"
+# Topiary pins this exact version; the wasm-bindgen CLI must match it.
+wasm-bindgen = "=0.2.100"
+wasm-bindgen-futures = "0.4"
+# Not used directly. topiary-core pulls in native tree-sitter 0.26 even on wasm32 (where it is
+# dead code, stripped at link time), and tree-sitter-language 0.1.8 refuses to compile that
+# for wasm32-unknown-unknown. Drop this once Topiary depends on tree-sitter >= 0.27.
+tree-sitter-language = "=0.1.7"
+
+[profile.release]
+opt-level = "s"
+lto = true
+
+# Keep this crate out of the repo-root package.
+[workspace]
+
+# topiary-core 0.7.3's wasm32 code path doesn't compile as published. `make` downloads it
+# into target/vendor and applies topiary-core-wasm.patch.
+[patch.crates-io]
+topiary-core = { path = "target/vendor/topiary-core-0.7.3" }

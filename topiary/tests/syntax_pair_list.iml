@@ -1,0 +1,15 @@
+type 'a pair_list = ('a * 'a) list
+
+let swap_all (l : int pair_list) : int pair_list =
+  List.map (fun (a, b) -> (b, a)) l
+
+let firsts (l : int pair_list) : int list =
+  match l with
+  | [(a, _); (b, _)] -> [a; b]
+  | _ -> []
+
+let push (x : int) (y : int) (l : int pair_list) : int pair_list =
+  (x, y) :: l
+
+theorem push_len x y l =
+  List.length (push x y l) = List.length l + 1

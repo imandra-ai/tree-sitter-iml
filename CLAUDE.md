@@ -10,7 +10,7 @@ and as C/Rust/Go/Swift bindings.
 - `grammars/iml/` — **the IML grammar.** This is what you edit.
   - `grammar.js` — the grammar source (the only hand-written file).
   - `src/{grammar.json,node-types.json,parser.c}` — **generated** artifacts, committed to the repo. Regenerate them; don't hand-edit.
-  - `libtree-sitter-iml.{a,dylib}` — **built** library artifacts, also committed.
+  - `libtree-sitter-iml.{a,dylib}` — **built** library artifacts. Not committed (`*.a`/`*.dylib` are gitignored); build them locally.
 - `grammars/{ocaml,interface,type}/` — upstream tree-sitter-ocaml grammars, kept for comparison. Usually leave these alone.
 - `queries/highlights.scm` — syntax-highlighting query (shared, at repo root).
 - `iml_examples/` — example `.iml` files grouped by feature, each with committed `.tree` snapshots (see below).

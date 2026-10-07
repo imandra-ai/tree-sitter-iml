@@ -1,0 +1,17 @@
+(* before theorem *)
+theorem (* before name *) add_comm x y =
+  (* inside statement *)
+  x + y = y + x (* trailing *)
+[@@by (* in attribute *) auto] (* after attribute *)
+
+lemma l1 x = (* body follows *) x = x [@@rw] (* trailing lemma *)
+
+verify (fun x -> (* body *) x = x) (* after verify *)
+
+instance (fun x -> x > (* bound *) 3)
+
+eval (* expr *) (1 + 1)
+
+let g x = x [@@macro] (* after macro attr *)
+
+[@@@decomp top "g"] (* after floating attr *)
