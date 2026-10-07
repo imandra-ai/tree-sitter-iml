@@ -65,8 +65,7 @@ let table = [ 1;  2;  3
             ; 10; 20; 30 ] [@@imlformat "disable"]
 ```
 
-- `[@@imlformat "disable"]` on an item (`let`, `type`, `module`, `theorem`, `verify`, ...)
-keeps the whole item as written. 
+- `[@@imlformat "disable"]` on an item (`let`, `type`, `module`, `theorem`, `verify`, ...) keeps the whole item as written.
 - `[@@@imlformat "disable"]` as the first item of a file (only comments may come before it) disables formatting for the whole file.
   - NOTE: the location of `[@@@imlformat "disable"]` is more restricted than `[@@@ocamlformat "disable"]`. `[@@@imlformat "enable"]` doesn't exist either.
 
@@ -84,7 +83,7 @@ Core files:
 | `languages.ncl`         | Topiary configuration declaring the `iml` language and its grammar         |
 | `iml-extra.scm`         | Hand-written formatting rules for IML-only syntax.                         |
 | `queries/iml.scm`       | The query Topiary loads. Generated                                         |
-| `update-queries.sh`     | Regenerates `queries/iml.scm`                                              |
+| `update-queries.py`     | Regenerates `queries/iml.scm`                                              |
 | `imlformat.sh`          | Wrapper that finds the grammar for your platform and runs Topiary          |
 | `imlformat-prettier.sh` | Runs the prettier-based formatter from imandrax-vscode, for comparison     |
 | `imlformat-cli.sh`      | Command-line handling shared by both scripts (paths, `--check`, `--diff`)  |
@@ -105,13 +104,15 @@ Because it re-prints the AST, it can silently change what the code means.
 
 ## How the query is built
 
-`update-queries.sh` downloads Topiary's `ocaml.scm` at a pinned release tag, adapts it to
+`update-queries.py` downloads Topiary's `ocaml.scm` at a pinned release tag, adapts it to
 the IML grammar, and appends `iml-extra.scm`:
-
-1. **Node-type renames.** The IML grammar is forked from a newer tree-sitter-ocaml than the
-   one Topiary pins. `product_expression` is renamed to `tuple_expression`, and the rule for
-   `typed_label` (which no longer exists) is removed. Every other node type the OCaml
-   rules use exists in the IML grammar.
+1. **Adaptations** (`RENAMES` and `PATCHES` in `update-queries.py`). The IML grammar is
+   forked from a newer tree-sitter-ocaml than the one Topiary pins. `product_expression` is
+   renamed to `tuple_expression`, and the rule for `typed_label` (which no longer exists) is
+   removed. Every other node type the OCaml rules use exists in the IML grammar. The let-binding
+   indent rules are also patched to end after the body, so a trailing `[@@attr]` stays at the
+   column of `let`. Each patch names the exact upstream text it replaces, and the script fails
+   if that text is not found, so a Topiary upgrade can't silently drop one.
 2. **IML statements** (`iml-extra.scm`): `axiom`, `theorem`, `lemma`, `verify`, `instance`,
    `eval`, `test` and `qcheck` get the same treatment as top-level `let`. That means a line
    break between items, a space after the keyword and before `=`, the body indented under `=`
@@ -129,13 +130,14 @@ the IML grammar, and appends `iml-extra.scm`:
 - **Trailing comments after `;`, `in` or `->` move onto their own line** (see "Comments"
   above).
 - **Rules can fall out of date.** The adapted query follows Topiary's pinned
-  tree-sitter-ocaml, so grammar changes on either side may need the rename list updated.
+  tree-sitter-ocaml, so grammar changes on either side may need the adaptations in
+  `update-queries.py` updated.
 
 ## Licence
 
 The OCaml rules in `queries/iml.scm` come from
 [Topiary](https://github.com/tweag/topiary) and are used under its MIT licence
 (Copyright (c) Tweag I/O Limited). The licence text is in `LICENSE-topiary`, and
-`update-queries.sh` copies it into the header of the generated `queries/iml.scm`, as the
+`update-queries.py` copies it into the header of the generated `queries/iml.scm`, as the
 licence requires. Everything else in this folder is covered by this repository's
 [licence](../LICENSE).

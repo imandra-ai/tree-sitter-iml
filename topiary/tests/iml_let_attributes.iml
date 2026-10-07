@@ -1,0 +1,15 @@
+let rec real_pow (g : real) (n : int) : real =
+  if n <= 0 then 1.0 else g *. real_pow g (n - 1)
+[@@measure Ordinal.of_int (max 0 n)]
+
+let g x = x + 1 [@@macro]
+
+let u = () [@@foo]
+
+let h x =
+  [ x; x ]
+[@@bar]
+
+let k = fun x ->
+  x + 1
+[@@baz] [@@qux]
