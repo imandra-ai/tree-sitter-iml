@@ -102,46 +102,41 @@
   "qcheck"
 ] @append_space
 
-; `theorem name params = body`: like let_binding, break after `=` and indent
-; the body when the statement spans several lines. The body is matched by its field
-; name, so a comment between `=` and the body doesn't end the indentation early.
+; `theorem name params = body`: like let_binding, indent the body under `=`. The body is
+; matched by its field name, so a comment between `=` and the body doesn't end the
+; indentation early.
 (axiom_definition
-  "=" @prepend_space @append_spaced_softline @append_indent_start
+  "=" @prepend_space @append_indent_start
   body: (_) @append_indent_end
 )
 (theorem_definition
-  "=" @prepend_space @append_spaced_softline @append_indent_start
+  "=" @prepend_space @append_indent_start
   statement: (_) @append_indent_end
 )
 (lemma_definition
-  "=" @prepend_space @append_spaced_softline @append_indent_start
+  "=" @prepend_space @append_indent_start
   statement: (_) @append_indent_end
 )
 
-; Attributes go on their own line in multi-line statements.
+; Break after `=` only when the body itself spans several lines: the scope runs from `=`
+; to the end of the body, so attributes on the next line don't move the body. (A plain
+; softline would follow the whole statement, attributes included.) The softline needs its
+; own query: with the indent captures above in the same query, Topiary fails with "Trying
+; to close an unopened indentation block".
 (axiom_definition
-  (item_attribute) @prepend_spaced_softline
+  "=" @append_begin_scope
+  body: (_) @prepend_spaced_scoped_softline @append_end_scope
+  (#scope_id! "axiom_body")
 )
 (theorem_definition
-  (item_attribute) @prepend_spaced_softline
+  "=" @append_begin_scope
+  statement: (_) @prepend_spaced_scoped_softline @append_end_scope
+  (#scope_id! "theorem_body")
 )
 (lemma_definition
-  (item_attribute) @prepend_spaced_softline
-)
-(verify_statement
-  (item_attribute) @prepend_spaced_softline
-)
-(instance_statement
-  (item_attribute) @prepend_spaced_softline
-)
-(eval_statement
-  (item_attribute) @prepend_spaced_softline
-)
-(test_statement
-  (item_attribute) @prepend_spaced_softline
-)
-(qcheck_statement
-  (item_attribute) @prepend_spaced_softline
+  "=" @append_begin_scope
+  statement: (_) @prepend_spaced_scoped_softline @append_end_scope
+  (#scope_id! "lemma_body")
 )
 
 ; Toplevel directives (`#show foo`): keep the space after the directive name and
@@ -247,6 +242,45 @@
     (test_statement)
     (qcheck_statement)
   ]
+)
+
+; Item attributes
+; ===============
+;
+; Like ocamlformat, the attributes after an item (`[@@by auto] [@@rw]`) are laid out as a
+; group: they start on a new line when the item spans several lines, and then either all
+; share that line or each gets its own. Topiary can't measure width, so "all share a line"
+; means they were written on one line. update-queries.py removes `item_attribute` from
+; Topiary's rule that puts a softline before every attribute.
+;
+; The first attribute is the one after a node that is neither an attribute nor a comment.
+; Topiary only accepts its own capture names, so that node is captured with
+; `@prepend_space` (harmless, it always follows a space) to test it with `#match?`.
+(_
+  (_) @prepend_space
+  .
+  (comment)*
+  .
+  (item_attribute) @prepend_spaced_softline @prepend_begin_scope
+  (#match? @prepend_space "^([^\\[(]|\\[[^@]|\\[@[^@]|\\([^*])")
+  (#scope_id! "item_attributes")
+)
+; The predicate sits outside the node pattern: inside it, the trailing `.` anchor is
+; ignored and the scope would end after every attribute.
+(
+  (_
+    (item_attribute) @append_end_scope
+    .
+  )
+  (#scope_id! "item_attributes")
+)
+(_
+  (item_attribute)
+  .
+  (comment)*
+  .
+  (item_attribute) @prepend_spaced_scoped_softline
+  (#scope_id! "item_attributes")
 )
 
 ; Opting out of formatting

@@ -109,15 +109,29 @@ the IML grammar, and appends `iml-extra.scm`:
 1. **Adaptations** (`RENAMES` and `PATCHES` in `update-queries.py`). The IML grammar is
    forked from a newer tree-sitter-ocaml than the one Topiary pins. `product_expression` is
    renamed to `tuple_expression`, and the rule for `typed_label` (which no longer exists) is
-   removed. Every other node type the OCaml rules use exists in the IML grammar. The let-binding
-   indent rules are also patched to end after the body, so a trailing `[@@attr]` stays at the
-   column of `let`. Each patch names the exact upstream text it replaces, and the script fails
-   if that text is not found, so a Topiary upgrade can't silently drop one.
+   removed. Every other node type the OCaml rules use exists in the IML grammar. Some rules are
+   also patched:
+   - The let-binding indent ends after the body, so a trailing `[@@attr]` stays at the column
+     of `let`.
+   - The line break after `=` depends only on the right-hand side: it breaks when the
+     right-hand side spans several lines, or when the input already breaks after `=`.
+     Upstream breaks whenever the enclosing item spans several lines, so attributes on the
+     next line pushed a one-line body under `=`. This covers the let-binding rule, the general
+     `=` rule (applications, `if`, variables, variants, ...) and the list/record rule.
+   - The softline that upstream puts before every item attribute is removed, since
+     `iml-extra.scm` lays attributes out as a group.
+
+   Each patch names the exact upstream text it replaces, and the script fails if that text is
+   not found, so a Topiary upgrade can't silently drop one.
 2. **IML statements** (`iml-extra.scm`): `axiom`, `theorem`, `lemma`, `verify`, `instance`,
    `eval`, `test` and `qcheck` get the same treatment as top-level `let`. That means a line
-   break between items, a space after the keyword and before `=`, the body indented under `=`
-   when the statement spans several lines, and attributes on their own line.
-3. **Toplevel directives** (`#show foo`): keeps the space after the directive name. Without
+   break between items, a space after the keyword and before `=`, and the body on its own line,
+   indented under `=`, when the body spans several lines.
+3. **Item attributes** (`iml-extra.scm`): like ocamlformat, the attributes after an item are
+   laid out as a group. They start on a new line when the item spans several lines, and stay
+   on one line (`[@@by auto] [@@rw]`) unless they were written across lines, in which case
+   each gets its own line.
+4. **Toplevel directives** (`#show foo`): keeps the space after the directive name. Without
    this rule Topiary prints `#showfoo`. That bug is in Topiary's own OCaml rules too.
 
 ## Known limitations

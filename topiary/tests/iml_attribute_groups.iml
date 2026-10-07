@@ -1,0 +1,58 @@
+theorem bogus_rs (x : int) = g x = x + 2
+[@@by auto] [@@rw] [@@imandra_rule_spec]
+
+theorem split (x : int) = g x = x + 2
+[@@by auto]
+[@@rw] [@@imandra_rule_spec]
+
+theorem one_line (x : int) = g x = x + 2 [@@by auto] [@@rw]
+
+theorem multi_line_body (x : int) =
+  g x = x + 2 [@@by auto] [@@rw]
+
+lemma commented x = x = x (* c *) [@@rw] (* d *) [@@foo]
+
+axiom ax x = x > 0
+[@@a] [@@b]
+
+verify (fun x -> x + 1 > x)
+[@@by auto] [@@timeout 10]
+
+let f (x : int) = x + 2
+[@@a] [@@b] [@@c]
+
+let rec real_pow (g : real) (n : int) : real = if n <= 0 then 1.0 else g *. real_pow g (n - 1)
+[@@measure Ordinal.of_int (max 0 n)] [@@by auto]
+
+module M = struct
+  let x = 1
+  [@@a] [@@b]
+end
+
+let app = g x
+[@@a]
+
+let var = y
+[@@a]
+
+let cond = if x then 1 else 2
+[@@a]
+
+let tuple = (1, 2)
+[@@a]
+
+let list = [1; 2]
+[@@a]
+
+let list_below =
+  [1; 2]
+[@@a]
+
+let record = { x = 1 }
+[@@a]
+
+theorem app_body x = f x
+[@@by auto]
+
+type t = A | B
+[@@deriving show]

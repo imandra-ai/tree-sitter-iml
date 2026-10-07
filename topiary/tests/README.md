@@ -23,6 +23,8 @@ The prefix gives the category:
 | `iml_statements` | All IML statement kinds, with attributes, keep their spacing and line breaks. |
 | `iml_adjacent_lines` | Statements on adjacent lines stay on their own lines; Topiary doesn't glue them together or insert blank lines between them. |
 | `iml_multiline_theorem` | A multi-line theorem gets its body indented under `=`. |
+| `iml_let_attributes` | Attributes after a `let` stay at the column of `let`, not indented with the body. |
+| `iml_attribute_groups` | Attributes after an item stay on one line unless written across lines; attributes on the next line don't move the body under `=`. |
 | `iml_directives` | Toplevel directives keep the space after the directive name (Topiary's own OCaml rules print `#showfoo`). |
 | `iml_floating_attributes` | Floating attributes (`[@@@import ...]`) stay on their own line, at the top level and in a `struct`; a trailing comment stays on the same line. |
 | `iml_disable_item` | `[@@imlformat "disable"]` keeps that item as written (for `let ... and`, the whole definition); the other items are still formatted. |

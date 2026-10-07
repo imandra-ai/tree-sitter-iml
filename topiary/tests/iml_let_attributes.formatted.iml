@@ -12,5 +12,4 @@ let h x =
 
 let k = fun x ->
   x + 1
-[@@baz]
-[@@qux]
+[@@baz] [@@qux]
