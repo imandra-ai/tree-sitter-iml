@@ -131,7 +131,9 @@ the IML grammar, and appends `iml-extra.scm`:
    laid out as a group. They start on a new line when the item spans several lines, and stay
    on one line (`[@@by auto] [@@rw]`) unless they were written across lines, in which case
    each gets its own line.
-4. **Toplevel directives** (`#show foo`): keeps the space after the directive name. Without
+4. **Labelled arguments** (`iml-extra.scm`): no space after the label's colon (`~basis:[...]`,
+   `?x:v`), as ocamlformat prints them. Topiary's own OCaml style is `~basis: [...]`.
+5. **Toplevel directives** (`#show foo`): keeps the space after the directive name. Without
    this rule Topiary prints `#showfoo`. That bug is in Topiary's own OCaml rules too.
 
 ## Known limitations

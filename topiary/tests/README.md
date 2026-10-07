@@ -17,6 +17,7 @@ The prefix gives the category:
 | `syntax_g_resolved` | `::` keeps its spaces, `Real.( ... )` is tidied. |
 | `syntax_types` | Variants, records, and a parameterised type keep `'a` and the parentheses in `(int * real) list`. |
 | `syntax_expressions` | Expressions: record update, `function`, `as` patterns, pipelines, negation, list literals, labelled and optional arguments, nested `let ... in`. |
+| `syntax_labelled_arguments` | Labelled and optional arguments and parameters print as `~x:a` with no space after the colon (Topiary's OCaml style is `~x: a`); typed parameters `~(x : int)` keep their spaces. |
 | `syntax_list_literals` | List literals in expressions and patterns keep their brackets and `;`. |
 | `syntax_modules_literals` | Modules, `open`, and literals: string escapes, chars, floats, nested tuples. |
 | `syntax_pair_list` | Snippet that the prettier-based formatter breaks (see `../examples/pair_list.iml`). Topiary leaves it unchanged. |

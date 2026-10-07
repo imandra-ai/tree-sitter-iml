@@ -2706,6 +2706,23 @@
   ]
 )
 
+; Labelled arguments and parameters
+; =================================
+;
+; No space after the label's colon: `f ~x:1 ?y:v`, `let f ~x:a = ...`, as ocamlformat prints
+; them. Topiary's OCaml style is `~x: 1`. The colon of a typed parameter, `~(x : int)`,
+; follows a pattern rather than a label_name, so it keeps its spaces.
+(labeled_argument
+  (label_name)
+  .
+  ":" @append_antispace
+)
+(parameter
+  (label_name)
+  .
+  ":" @append_antispace
+)
+
 ; Item attributes
 ; ===============
 ;

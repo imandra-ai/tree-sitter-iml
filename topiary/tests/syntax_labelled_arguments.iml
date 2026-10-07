@@ -1,0 +1,7 @@
+(* Labels: no space after the colon. Typed parameters keep the spaces around theirs. *)
+let f ~x:a ?y:(b = 3) ?z:c ~(t : int) ?(u : int = 3) () = g ~x:a ?y:b ~z:(h c) ~t
+
+let g ~x: a = h ~x: a ?y: None
+
+let f (x : int) = if Lib.g x > 3 then 1 else 2
+[@@decomp top ~basis:[[%id g]] ()]

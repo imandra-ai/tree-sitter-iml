@@ -2,7 +2,7 @@ theorem deposit_increases a x =
   x >. 0.0 ==> (deposit a x).balance >. a.balance
 [@@by auto]
 
-lemma rev_len l = List.length (List.rev l) = List.length l [@@by induct ~on_fun: [%id List.rev] ()] [@@rw]
+lemma rev_len l = List.length (List.rev l) = List.length l [@@by induct ~on_fun:[%id List.rev] ()] [@@rw]
 
 verify (fun x y -> x + y = y + x)
 
