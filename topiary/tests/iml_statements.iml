@@ -15,3 +15,9 @@ let g x = if x > 10 then x - 1 else x + 1 [@@macro]
 eval (g 3)
 
 axiom ax x = x + 0 = x
+
+rule_spec   rs_rw (x : int) =  x + 0 = x [@@rw]
+
+rule_spec rs_fc l =
+  List.length l [@trigger] >= 0
+[@@fc]

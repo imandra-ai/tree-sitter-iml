@@ -123,7 +123,7 @@ the IML grammar, and appends `iml-extra.scm`:
 
    Each patch names the exact upstream text it replaces, and the script fails if that text is
    not found, so a Topiary upgrade can't silently drop one.
-2. **IML statements** (`iml-extra.scm`): `axiom`, `theorem`, `lemma`, `verify`, `instance`,
+2. **IML statements** (`iml-extra.scm`): `axiom`, `theorem`, `lemma`, `rule_spec`, `verify`, `instance`,
    `eval`, `test` and `qcheck` get the same treatment as top-level `let`. That means a line
    break between items, a space after the keyword and before `=`, and the body on its own line,
    indented under `=`, when the body spans several lines.

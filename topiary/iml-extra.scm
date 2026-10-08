@@ -6,6 +6,7 @@
   (axiom_definition)
   (theorem_definition)
   (lemma_definition)
+  (rule_spec_definition)
   (verify_statement)
   (instance_statement)
   (eval_statement)
@@ -34,6 +35,7 @@
     (axiom_definition)
     (theorem_definition)
     (lemma_definition)
+    (rule_spec_definition)
     (verify_statement)
     (instance_statement)
     (eval_statement)
@@ -46,6 +48,7 @@
     (axiom_definition)
     (theorem_definition)
     (lemma_definition)
+    (rule_spec_definition)
     (verify_statement)
     (instance_statement)
     (eval_statement)
@@ -58,6 +61,7 @@
     (axiom_definition)
     (theorem_definition)
     (lemma_definition)
+    (rule_spec_definition)
     (verify_statement)
     (instance_statement)
     (eval_statement)
@@ -82,6 +86,7 @@
     (axiom_definition)
     (theorem_definition)
     (lemma_definition)
+    (rule_spec_definition)
     (verify_statement)
     (instance_statement)
     (eval_statement)
@@ -95,6 +100,7 @@
   "axiom"
   "theorem"
   "lemma"
+  "rule_spec"
   "verify"
   "instance"
   "eval"
@@ -114,6 +120,10 @@
   statement: (_) @append_indent_end
 )
 (lemma_definition
+  "=" @prepend_space @append_indent_start
+  statement: (_) @append_indent_end
+)
+(rule_spec_definition
   "=" @prepend_space @append_indent_start
   statement: (_) @append_indent_end
 )
@@ -137,6 +147,11 @@
   "=" @append_begin_scope
   statement: (_) @prepend_spaced_scoped_softline @append_end_scope
   (#scope_id! "lemma_body")
+)
+(rule_spec_definition
+  "=" @append_begin_scope
+  statement: (_) @prepend_spaced_scoped_softline @append_end_scope
+  (#scope_id! "rule_spec_body")
 )
 
 ; Toplevel directives (`#show foo`): keep the space after the directive name and
@@ -164,6 +179,7 @@
     (axiom_definition)
     (theorem_definition)
     (lemma_definition)
+    (rule_spec_definition)
     (verify_statement)
     (instance_statement)
     (eval_statement)
@@ -236,6 +252,7 @@
     (axiom_definition)
     (theorem_definition)
     (lemma_definition)
+    (rule_spec_definition)
     (verify_statement)
     (instance_statement)
     (eval_statement)
@@ -331,6 +348,8 @@
     (theorem_definition
       (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
     (lemma_definition
+      (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
+    (rule_spec_definition
       (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
     (verify_statement
       (item_attribute (attribute_id) @_id (attribute_payload) @_payload))
