@@ -984,6 +984,10 @@
         "named": true
       },
       {
+        "type": "rule_spec_definition",
+        "named": true
+      },
+      {
         "type": "test_statement",
         "named": true
       },
@@ -5140,6 +5144,48 @@
     "fields": {}
   },
   {
+    "type": "rule_spec_definition",
+    "named": true,
+    "fields": {
+      "statement": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_sequence_expression",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "_parameter",
+          "named": true
+        },
+        {
+          "type": "attribute_id",
+          "named": true
+        },
+        {
+          "type": "item_attribute",
+          "named": true
+        },
+        {
+          "type": "parenthesized_operator",
+          "named": true
+        },
+        {
+          "type": "value_name",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "sequence_expression",
     "named": true,
     "fields": {},
@@ -6512,6 +6558,10 @@
   {
     "type": "rel_operator",
     "named": true
+  },
+  {
+    "type": "rule_spec",
+    "named": false
   },
   {
     "type": "shebang",

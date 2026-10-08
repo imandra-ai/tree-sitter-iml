@@ -1,0 +1,25 @@
+let ident (x : int) = x
+
+let f x = x
+
+(* A rewrite rule spec, used by decomposition but never proved *)
+rule_spec ident_rw (x : int) = ident x = x [@@rw]
+
+(* Forward-chaining rule spec with an explicit trigger *)
+rule_spec f_one x = f x [@trigger] = 1
+
+rule_spec map_cons_eval f x y =
+  List.map f (x :: y) [@trigger] = f x :: List.map f y
+[@@rw]
+
+rule_spec r l =
+  match l [@trigger] with
+  | [x; y] -> x = y
+  | _ -> true
+[@@fc]
+
+let g (x : int) = if ident x > 0 then "positive" else "not positive"
+[@@decomp top ~rule_specs:[[%id ident_rw]] ~prune:true ()]
+
+let h x = if f x > 0 then 1 else 2
+[@@decomp top ~basis:[[%id f]] ~rule_specs:[[%id f_one]] ~prune:true ()]

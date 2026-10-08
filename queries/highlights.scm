@@ -35,7 +35,7 @@
 ;----------------------
 
 [
-  "axiom" "theorem" "lemma" "verify" "instance" "eval" "test" "qcheck"
+  "axiom" "theorem" "lemma" "rule_spec" "verify" "instance" "eval" "test" "qcheck"
 ] @keyword
 
 ; Operators

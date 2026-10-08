@@ -16,7 +16,7 @@ and as C/Rust/Go/Swift bindings.
 - `iml_examples/` — example `.iml` files grouped by feature, each with committed `.tree` snapshots (see below).
 - `scripts/gen_tree.py` — dev tool to render an `.iml` file's parse tree to a `.tree` file.
 
-IML-specific keywords live in `grammar.js`: `axiom`, `theorem`, `lemma`,
+IML-specific keywords live in `grammar.js`: `axiom`, `theorem`, `lemma`, `rule_spec`,
 `verify`, `instance`, `eval`, `test`, `qcheck`. Each has a corresponding
 `*_statement`/`*_definition` rule and an entry in `_structure_item`.
 

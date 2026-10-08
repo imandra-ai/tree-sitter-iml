@@ -147,6 +147,7 @@ module.exports = grammar({
       'axiom',
       'theorem',
       'lemma',
+      'rule_spec',
       'verify',
       'instance',
       'eval',
@@ -264,6 +265,7 @@ module.exports = grammar({
       $.axiom_definition,
       $.theorem_definition,
       $.lemma_definition,
+      $.rule_spec_definition,
       $.verify_statement,
       $.instance_statement,
       $.eval_statement,
@@ -541,6 +543,16 @@ module.exports = grammar({
 
     lemma_definition: $ => seq(
       'lemma',
+      optional($._attribute),
+      $._value_name,
+      repeat($._parameter),
+      '=',
+      field('statement', $._sequence_expression),
+      repeat($.item_attribute),
+    ),
+
+    rule_spec_definition: $ => seq(
+      'rule_spec',
       optional($._attribute),
       $._value_name,
       repeat($._parameter),
