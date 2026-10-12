@@ -29,6 +29,17 @@ source "${HERE}/imlformat-cli.sh"
 parse_args "$@"
 
 TOPIARY="${TOPIARY:-topiary}"
+# Editors often spawn us with a minimal PATH that lacks cargo's bin dir (where
+# `cargo install topiary-cli` puts it), so fall back to it explicitly.
+if ! command -v "${TOPIARY}" >/dev/null; then
+  cargo_topiary="${CARGO_HOME:-${HOME}/.cargo}/bin/topiary"
+  if [[ -x "${cargo_topiary}" ]]; then
+    TOPIARY="${cargo_topiary}"
+  else
+    echo "error: topiary not found on PATH or in ${cargo_topiary%/topiary}" >&2
+    exit 2
+  fi
+fi
 case "$(uname -s)" in
   Darwin) ext=dylib ;;
   *) ext=so ;;
