@@ -6340,6 +6340,105 @@
         },
         {
           "type": "PREC_RIGHT",
+          "value": "implies",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "left",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_expression"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "operator",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "implies_operator"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "right",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_expression"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "PREC_LEFT",
+          "value": "explies",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "left",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_expression"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "operator",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "explies_operator"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "right",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_expression"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "PREC_LEFT",
+          "value": "iff",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "left",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_expression"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "operator",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "iff_operator"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "right",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_expression"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "PREC_RIGHT",
           "value": "assign",
           "content": {
             "type": "SEQ",
@@ -10432,6 +10531,18 @@
         },
         {
           "type": "SYMBOL",
+          "name": "implies_operator"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "explies_operator"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "iff_operator"
+        },
+        {
+          "type": "SYMBOL",
           "name": "assign_operator"
         }
       ]
@@ -10787,6 +10898,18 @@
           "value": "||"
         }
       ]
+    },
+    "implies_operator": {
+      "type": "STRING",
+      "value": "==>"
+    },
+    "explies_operator": {
+      "type": "STRING",
+      "value": "<=="
+    },
+    "iff_operator": {
+      "type": "STRING",
+      "value": "<==>"
     },
     "assign_operator": {
       "type": "PATTERN",
@@ -11779,6 +11902,18 @@
       {
         "type": "STRING",
         "value": "or"
+      },
+      {
+        "type": "STRING",
+        "value": "implies"
+      },
+      {
+        "type": "STRING",
+        "value": "explies"
+      },
+      {
+        "type": "STRING",
+        "value": "iff"
       },
       {
         "type": "STRING",

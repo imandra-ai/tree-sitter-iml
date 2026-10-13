@@ -1,6 +1,9 @@
 Semver is followed.
 
 
+## [0.29.0] - 2026-10-13
+- add ImandraX-specific operator precedence rules (`==>`, `<==`, `<==>`)
+
 ## [0.28.0] - 2026-10-08
 - add `rule_spec` keyword
 

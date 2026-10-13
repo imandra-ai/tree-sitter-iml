@@ -1,0 +1,21 @@
+(* Tightest first: `==>` (right), `<==` (left), `<==>` (no chaining). All bind looser than `||` and tighter than `,`. *)
+
+verify (fun t1 t2 ->
+  t1 <= t2
+  ==>
+  band_rank (classify t1) <= band_rank (classify t2)
+)
+
+verify (fun a b c -> a ==> b ==> c)
+
+verify (fun a b c -> a && b || c ==> a = b)
+
+let implies_pair a b c = (a ==> b, c)
+
+let implies_fn = ( ==> )
+
+verify (fun a b c -> a <== b <== c)
+
+verify (fun a b c -> a ==> b <==> c <== a = b)
+
+let ops = (( <== ), ( <==> ))
