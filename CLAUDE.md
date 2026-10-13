@@ -13,7 +13,7 @@ and as C/Rust/Go/Swift bindings.
   - `libtree-sitter-iml.{a,dylib}` — **built** library artifacts. Not committed (`*.a`/`*.dylib` are gitignored); build them locally.
 - `grammars/{ocaml,interface,type}/` — upstream tree-sitter-ocaml grammars, kept for comparison. Usually leave these alone.
 - `queries/highlights.scm` — syntax-highlighting query (shared, at repo root).
-- `iml_examples/` — example `.iml` files grouped by feature, each with committed `.tree` snapshots (see below).
+- `iml_examples/` — example `.iml` files grouped by feature
 - `scripts/gen_tree.py` — dev tool to render an `.iml` file's parse tree to a `.tree` file.
 
 IML-specific keywords live in `grammar.js`: `axiom`, `theorem`, `lemma`, `rule_spec`,
@@ -49,19 +49,19 @@ cd grammars/iml && printf 'test (fun x -> x = x)\n' | npx tree-sitter parse /dev
 ## Examples and `.tree` snapshots
 
 Each example feature dir (e.g. `iml_examples/qcheck/`, `iml_examples/test/`)
-contains `basic.iml` plus two committed parse-tree snapshots:
+contains `basic.iml` plus two parse-tree snapshots. The `.iml` is committed; the
+`.tree` files are gitignored (`*.tree`), so they're local references only:
 
 - `basic.iml.tree` — parsed with the **IML** grammar.
 - `basic.ocaml.tree` — parsed with the upstream **OCaml** grammar, for comparison
   (OCaml doesn't know IML keywords, so e.g. `test foo` parses as a function
   application — that contrast is the point of keeping both).
 
-Generate them with `scripts/gen_tree.py`. It depends on the editable
-`tree-sitter-iml` package, so `uv run` rebuilds the parser automatically — run
-this *after* regenerating in step 2:
+Generate them with `scripts/gen_tree.py`, after regenerating in step 2.
+
 ```bash
-uv run scripts/gen_tree.py iml_examples/test/basic.iml          # -> basic.iml.tree
-uv run scripts/gen_tree.py --ocaml iml_examples/test/basic.iml  # -> basic.ocaml.tree
+uv run --script scripts/gen_tree.py iml_examples/test/basic.iml          # -> basic.iml.tree
+uv run --script scripts/gen_tree.py --ocaml iml_examples/test/basic.iml  # -> basic.ocaml.tree
 ```
 
 ## Make targets (from repo root)
