@@ -304,6 +304,18 @@
         "named": true
       },
       {
+        "type": "explies_operator",
+        "named": true
+      },
+      {
+        "type": "iff_operator",
+        "named": true
+      },
+      {
+        "type": "implies_operator",
+        "named": true
+      },
+      {
         "type": "mult_operator",
         "named": true
       },
@@ -2882,6 +2894,18 @@
           },
           {
             "type": "concat_operator",
+            "named": true
+          },
+          {
+            "type": "explies_operator",
+            "named": true
+          },
+          {
+            "type": "iff_operator",
+            "named": true
+          },
+          {
+            "type": "implies_operator",
             "named": true
           },
           {
@@ -6359,6 +6383,10 @@
     "named": false
   },
   {
+    "type": "explies_operator",
+    "named": true
+  },
+  {
     "type": "external",
     "named": false
   },
@@ -6393,6 +6421,14 @@
   {
     "type": "if",
     "named": false
+  },
+  {
+    "type": "iff_operator",
+    "named": true
+  },
+  {
+    "type": "implies_operator",
+    "named": true
   },
   {
     "type": "in",

@@ -67,6 +67,9 @@ module.exports = grammar({
       'rel',
       'and',
       'or',
+      'implies',
+      'explies',
+      'iff',
       'tuple',
       'assign',
       'set',
@@ -1312,6 +1315,22 @@ module.exports = grammar({
           associativity: 'right',
         },
         {
+          operator: $.implies_operator,
+          precedence: 'implies',
+          associativity: 'right',
+        },
+        {
+          operator: $.explies_operator,
+          precedence: 'explies',
+          associativity: 'left',
+        },
+        {
+          // ImandraX rejects a chain `a <==> b <==> c`; parse it leniently.
+          operator: $.iff_operator,
+          precedence: 'iff',
+          associativity: 'left',
+        },
+        {
           operator: $.assign_operator,
           precedence: 'assign',
           associativity: 'right',
@@ -2069,6 +2088,9 @@ module.exports = grammar({
       $.rel_operator,
       $.and_operator,
       $.or_operator,
+      $.implies_operator,
+      $.explies_operator,
+      $.iff_operator,
       $.assign_operator,
     ),
 
@@ -2105,6 +2127,14 @@ module.exports = grammar({
     and_operator: $ => choice('&', '&&'),
 
     or_operator: $ => choice('or', '||'),
+
+    // IML logical operators. They bind looser than `||` and tighter than `,`, in the order
+    // `==>` > `<==` > `<==>`, unlike OCaml where they would be `rel_operator`s.
+    implies_operator: $ => '==>',
+
+    explies_operator: $ => '<==',
+
+    iff_operator: $ => '<==>',
 
     assign_operator: $ => /:=/,
 

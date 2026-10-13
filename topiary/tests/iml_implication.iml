@@ -1,0 +1,27 @@
+(* Issue #16: break before `==>`, keep each side's relations together *)
+verify (fun t1 t2 ->
+  t1 <= t2
+  ==>
+  band_rank (classify t1) <= band_rank (classify t2)
+)
+
+verify (fun a b c -> a && b==>c==>a || b)
+
+verify (fun a b c ->
+  a && b
+  ==> c ==> (fun x -> x) a
+  ==> a || b)
+
+theorem imp_pair a b c = (a ==> b, c) = ((a ==> b), c)
+
+let imp = ( ==> )
+
+verify (fun a b c -> a<==b<==c)
+
+verify (fun a b c -> a ==> b<==>c <== a)
+
+verify (fun a b c ->
+  a || b
+  <==> c ==> a)
+
+let ops = (( <== ), ( <==> ))

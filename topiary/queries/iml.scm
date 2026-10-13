@@ -2740,6 +2740,44 @@
   ":" @append_antispace
 )
 
+; Implication
+; ===========
+;
+; `==>`, `<==` and `<==>` have their own node types in the IML grammar (looser than `||`),
+; not OCaml's operator classes, so Topiary's OCaml rules don't cover them. Lay them out like
+; `||`: spaced, and when the expression spans several lines, each operator starts a line.
+; A nested implication on the right (`a ==> b ==> c`) shares the outermost one's scope.
+[
+  (implies_operator)
+  (explies_operator)
+  (iff_operator)
+] @prepend_space @append_space
+
+(
+  [
+    (implies_operator)
+    (explies_operator)
+    (iff_operator)
+  ]? @do_nothing
+  .
+  (infix_expression
+    [
+      (implies_operator)
+      (explies_operator)
+      (iff_operator)
+    ]
+  ) @prepend_begin_scope @append_end_scope
+  (#scope_id! "implication_infix_expression")
+)
+(infix_expression
+  [
+    (implies_operator)
+    (explies_operator)
+    (iff_operator)
+  ] @prepend_spaced_scoped_softline
+  (#scope_id! "implication_infix_expression")
+)
+
 ; Item attributes
 ; ===============
 ;
