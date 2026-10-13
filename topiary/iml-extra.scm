@@ -285,6 +285,7 @@
 ; not OCaml's operator classes, so Topiary's OCaml rules don't cover them. Lay them out like
 ; `||`: spaced, and when the expression spans several lines, each operator starts a line.
 ; A nested implication on the right (`a ==> b ==> c`) shares the outermost one's scope.
+; Whether the right operand also starts a line is left to the author (see below).
 [
   (implies_operator)
   (explies_operator)
@@ -314,6 +315,20 @@
     (iff_operator)
   ] @prepend_spaced_scoped_softline
   (#scope_id! "implication_infix_expression")
+)
+
+; Break after the operator only where the author did: the scope runs from the operator to
+; the start of the right operand, so it is multi-line only when that gap holds a newline. A
+; multi-line right operand (e.g. a parenthesised `match`) doesn't count.
+(infix_expression
+  operator: [
+    (implies_operator)
+    (explies_operator)
+    (iff_operator)
+  ] @prepend_begin_scope @append_spaced_scoped_softline
+  .
+  right: (_) @prepend_end_scope
+  (#scope_id! "implication_after_operator")
 )
 
 ; Item attributes

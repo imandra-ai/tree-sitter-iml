@@ -134,7 +134,8 @@ the IML grammar, and appends `iml-extra.scm`:
 4. **Labelled arguments** (`iml-extra.scm`): no space after the label's colon (`~basis:[...]`,
    `?x:v`), as ocamlformat prints them. Topiary's own OCaml style is `~basis: [...]`.
 5. **Implication** (`iml-extra.scm`): `==>`, `<==` and `<==>` are spaced and, when the
-   expression spans several lines, each operator starts a line, like `||`. The IML grammar
+   expression spans several lines, each operator starts a line, like `||`. The right operand
+   goes on the next line only if it was written there. The IML grammar
    parses them with their own precedence (looser than `||`), so Topiary's OCaml operator rules
    don't cover them.
 6. **Toplevel directives** (`#show foo`): keeps the space after the directive name. Without

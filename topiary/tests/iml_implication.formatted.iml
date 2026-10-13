@@ -1,7 +1,8 @@
-(* Issue #16: break before `==>`, keep each side's relations together *)
+(* Issue #16: keep each side's relations together; break before `==>`, and after it where written *)
 verify (fun t1 t2 ->
   t1 <= t2
-  ==> band_rank (classify t1) <= band_rank (classify t2)
+  ==>
+  band_rank (classify t1) <= band_rank (classify t2)
 )
 
 verify (fun a b c -> a && b ==> c ==> a || b)
@@ -28,3 +29,22 @@ verify (fun a b c ->
 )
 
 let ops = ((<==), (<==>))
+
+(* A break after the operator is kept only where the author wrote one *)
+verify (fun t1 t2 ->
+  t1 <= t2
+  ==>
+  band_rank (classify t1) <= band_rank (classify t2)
+)
+
+verify (fun a b c ->
+  a
+  ==> b
+  ==>
+  c
+  ==> (
+    match a with
+    | true -> b
+    | false -> c
+  )
+)
